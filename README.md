@@ -421,8 +421,8 @@ type ValidateToken = (req: Request) => boolean;
 This function is used by the doubleCsrfProtection middleware to determine whether an incoming request has a valid
 CSRF token. You can use this to make your own custom middleware (not recommended).
 
-[npm-url]: https://npmjs.com/package/@otterjs/csrf-csrf
-[npm-img]: https://img.shields.io/npm/dt/@otterjs/csrf-csrf?style=for-the-badge&color=blueviolet
+[npm-url]: https://npmjs.com/package/@otterhttp/csrf-csrf
+[npm-img]: https://img.shields.io/npm/dt/@otterhttp/csrf-csrf?style=for-the-badge&color=blueviolet
 [github-actions]: https://github.com/otterjs/csrf-csrf/actions
 [gh-actions-img]: https://img.shields.io/github/actions/workflow/status/otterjs/csrf-csrf/ci.yml?style=for-the-badge&logo=github&label=&color=blueviolet
 [cov-url]: https://coveralls.io/github/OtterJS/csrf-csrf

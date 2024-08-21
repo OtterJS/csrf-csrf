@@ -1,5 +1,5 @@
 {
-  "name": "@otterjs/csrf-csrf",
+  "name": "@otterhttp/csrf-csrf",
   "description": "Double-Submit Cookie Pattern CSRF Protection middleware for modern Node.js",
   "type": "module",
   "main": "./dist/index.js",
