@@ -1,4 +1,4 @@
-import type { Request, Response } from "@tinyhttp/app"
+import type { Request, Response } from "./mock-types.js"
 
 const SECRET_1 = "secrets must be unique and must not"
 const SECRET_2 = "be used elsewhere, nor be sentences"

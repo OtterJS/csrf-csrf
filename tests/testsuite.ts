@@ -1,14 +1,15 @@
-import { doubleCsrf } from "@/index"
-import type { DoubleCsrfConfig } from "@/types"
-import type { Request, Response } from "@tinyhttp/app"
-import { serialize as serializeCookie } from "@tinyhttp/cookie"
-import { sign } from "@tinyhttp/cookie-signature"
+import { serialize as serializeCookie } from "@otterhttp/cookie"
+import { sign } from "@otterhttp/cookie-signature"
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { assert, describe, expect, it } from "vitest"
 
-import { HEADER_KEY, TEST_TOKEN } from "./utils/constants"
+import { COOKIE_SECRET, HEADER_KEY, TEST_TOKEN } from "./utils/constants";
 import { getCookieFromRequest, getCookieFromResponse, switchSecret } from "./utils/helpers"
 import { generateMocks, generateMocksWithToken, next } from "./utils/mock"
+import type { Request, Response } from "./utils/mock-types"
+
+import { doubleCsrf } from "@/index"
+import type { DoubleCsrfConfig } from "@/types"
 
 type CreateTestSuite = (
   name: string,
@@ -63,7 +64,7 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
       it("should attach both a token and its hash to the response and return a token", () => {
         const { mockRequest, decodedCookieValue, setCookie } = generateMocksWithTokenInternal()
         const cookieValue = signed
-          ? `s:${sign(decodedCookieValue as string, mockRequest.secret as string)}`
+          ? `s:${sign(decodedCookieValue as string, COOKIE_SECRET)}`
           : decodedCookieValue
 
         const expectedSetCookieValue = serializeCookie(cookieName, cookieValue as string, {
@@ -109,7 +110,7 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
         // modify the cookie to make the token/hash pair invalid
         const cookieJar = signed ? mockRequest.signedCookies : mockRequest.cookies
         cookieJar[cookieName] = signed
-          ? `s:${sign(`${(decodedCookieValue as string).split("|")[0]}|invalid-hash`, mockRequest.secret as string)}`
+          ? `s:${sign(`${(decodedCookieValue as string).split("|")[0]}|invalid-hash`, COOKIE_SECRET)}`
           : `${(decodedCookieValue as string).split("|")[0]}|invalid-hash`
 
         expect(() =>
@@ -120,7 +121,7 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
         ).to.throw(invalidCsrfTokenError.message)
 
         // just an invalid value in the cookie
-        cookieJar[cookieName] = signed ? `s:${sign("invalid-value", mockRequest.secret as string)}` : "invalid-value"
+        cookieJar[cookieName] = signed ? `s:${sign("invalid-value", COOKIE_SECRET)}` : "invalid-value"
 
         expect(() =>
           generateToken(mockRequest, mockResponse, {
@@ -146,7 +147,7 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
         // modify the cookie to make the token/hash pair invalid
         const cookieJar = signed ? mockRequest.signedCookies : mockRequest.cookies
         cookieJar[cookieName] = signed
-          ? `s:${sign(`${(decodedCookieValue as string).split("|")[0]}|invalid-hash`, mockRequest.secret as string)}`
+          ? `s:${sign(`${(decodedCookieValue as string).split("|")[0]}|invalid-hash`, COOKIE_SECRET)}`
           : `${(decodedCookieValue as string).split("|")[0]}|invalid-hash`
 
         assert.doesNotThrow(() => {
@@ -160,7 +161,7 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
         assert.notEqual(generatedToken, csrfToken)
 
         // just an invalid value in the cookie
-        cookieJar[cookieName] = signed ? `s:${sign("invalid-value", mockRequest.secret as string)}` : "invalid-value"
+        cookieJar[cookieName] = signed ? `s:${sign("invalid-value", COOKIE_SECRET)}` : "invalid-value"
 
         assert.doesNotThrow(() => {
           generatedToken = generateToken(mockRequest, mockResponse, {

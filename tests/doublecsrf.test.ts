@@ -3,7 +3,7 @@ import type { DoubleCsrfConfig } from "@/types"
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { assert, describe, it } from "vitest"
 import { createTestSuite } from "./testsuite"
-import { HEADER_KEY } from "./utils/constants"
+import { COOKIE_SECRET, HEADER_KEY } from "./utils/constants";
 import {
   attachResponseValuesToRequest,
   getMultipleSecrets,
@@ -17,7 +17,7 @@ createTestSuite("csrf-csrf unsigned, single secret", {
   getSessionIdentifier: legacySessionIdentifier,
 })
 createTestSuite("csrf-csrf signed, single secret", {
-  cookieOptions: { signed: true },
+  cookieOptions: { signed: true, getSigningSecret: () => COOKIE_SECRET },
   getSecret: getSingleSecret,
   getSessionIdentifier: legacySessionIdentifier,
   errorConfig: {
@@ -29,7 +29,7 @@ createTestSuite("csrf-csrf signed, single secret", {
 createTestSuite("csrf-csrf signed with custom options, single secret", {
   getSecret: getSingleSecret,
   getSessionIdentifier: legacySessionIdentifier,
-  cookieOptions: { name: "__Host.test-the-thing.token", signed: true, sameSite: "strict" },
+  cookieOptions: { name: "__Host.test-the-thing.token", signed: true, getSigningSecret: () => COOKIE_SECRET, sameSite: "strict" },
   size: 128,
   delimiter: "~",
   hmacAlgorithm: "sha512",
@@ -40,7 +40,7 @@ createTestSuite("csrf-csrf unsigned, multiple secrets", {
   getSessionIdentifier: legacySessionIdentifier,
 })
 createTestSuite("csrf-csrf signed, multiple secrets", {
-  cookieOptions: { signed: true },
+  cookieOptions: { signed: true, getSigningSecret: () => COOKIE_SECRET },
   getSecret: getMultipleSecrets,
   getSessionIdentifier: legacySessionIdentifier,
   delimiter: "~",
@@ -49,7 +49,7 @@ createTestSuite("csrf-csrf signed, multiple secrets", {
 createTestSuite("csrf-csrf signed with custom options, multiple secrets", {
   getSecret: getMultipleSecrets,
   getSessionIdentifier: legacySessionIdentifier,
-  cookieOptions: { name: "__Host.test-the-thing.token", signed: true, sameSite: "strict" },
+  cookieOptions: { name: "__Host.test-the-thing.token", signed: true, getSigningSecret: () => COOKIE_SECRET, sameSite: "strict" },
   size: 128,
   errorConfig: {
     statusCode: 401,

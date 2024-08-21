@@ -1,40 +1,26 @@
-import type { CsrfRequestValidator, CsrfTokenCreator } from "@/types.js"
-import type { Request, Response } from "@tinyhttp/app"
-import { parse } from "@tinyhttp/cookie"
+import { IncomingMessage, ServerResponse } from "node:http"
+import { parse } from "@otterhttp/cookie"
 import { cookieParser, signedCookie } from "@tinyhttp/cookie-parser"
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { assert } from "vitest"
+
 import { COOKIE_SECRET, HEADER_KEY } from "./constants.js"
 import { getCookieFromRequest, getCookieValueFromResponse } from "./helpers.js"
+import type { Request, Response } from "./mock-types"
+
+import type { CsrfRequestValidator, CsrfTokenCreator } from "@/types.js"
 
 // Create some request and response mocks
 export const generateMocks = () => {
-  const mockRequest = {
-    headers: {
-      cookie: "",
-    },
+  const mockRequest: Request = Object.assign(new IncomingMessage(undefined as any), {
     cookies: {},
     signedCookies: {},
-    secret: COOKIE_SECRET,
-  } satisfies Partial<Request> as Request
+  })
 
-  // Internally mock the headers as a map.
-  const mockResponseHeaders = new Map<string, string | string[]>()
-  mockResponseHeaders.set("set-cookie", [] as string[])
-
-  // Mock bare minimum properties for testing.
-  const mockResponse = {
-    getHeader: (name: string) => mockResponseHeaders.get(name),
-    setHeader: (name: string, value: string) => {
-      mockResponseHeaders.set(name, value)
-      return mockResponse
-    },
-  } satisfies Partial<Response> as Response
+  const mockResponse: Response = new ServerResponse(mockRequest)
 
   return {
     mockRequest,
     mockResponse,
-    mockResponseHeaders,
   }
 }
 
@@ -57,16 +43,17 @@ export const generateMocksWithToken = ({
   generateToken,
   validateRequest,
 }: GenerateMocksWithTokenOptions) => {
-  const { mockRequest, mockResponse, mockResponseHeaders } = generateMocks()
+  const { mockRequest, mockResponse } = generateMocks()
 
   const csrfToken = generateToken(mockRequest, mockResponse)
   const { setCookie, cookieValue } = getCookieValueFromResponse(mockResponse)
   mockRequest.headers.cookie = `${cookieName}=${cookieValue};`
   const decodedCookieValue = signed
-    ? signedCookie(parse(mockRequest.headers.cookie)[cookieName], mockRequest.secret as string)
+    ? signedCookie(parse(mockRequest.headers.cookie)[cookieName], COOKIE_SECRET)
     : // signedCookie already decodes the value, but we need it if it's not signed.
       decodeURIComponent(cookieValue)
-  // Have to delete the cookies object otherwise cookieParser will skip it's parsing.
+  // Have to delete the cookies object otherwise cookieParser will skip its parsing.
+  // @ts-expect-error
   mockRequest.cookies = undefined
   cookieParserMiddleware(mockRequest, mockResponse, next)
   assert.equal(getCookieFromRequest(cookieName, signed, mockRequest), decodedCookieValue)
@@ -81,7 +68,6 @@ export const generateMocksWithToken = ({
     decodedCookieValue,
     mockRequest,
     mockResponse,
-    mockResponseHeaders,
     setCookie,
   }
 }
