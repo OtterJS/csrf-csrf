@@ -1,4 +1,5 @@
 import { IncomingMessage, ServerResponse } from "node:http"
+import type { Socket } from "node:net"
 import { parse } from "@otterhttp/cookie"
 import { cookieParser, signedCookie } from "@tinyhttp/cookie-parser"
 import { assert } from "vitest"
@@ -11,7 +12,7 @@ import type { CsrfRequestValidator, CsrfTokenCreator } from "@/types.js"
 
 // Create some request and response mocks
 export const generateMocks = () => {
-  const mockRequest: Request = Object.assign(new IncomingMessage(undefined as any), {
+  const mockRequest: Request = Object.assign(new IncomingMessage(undefined as unknown as Socket), {
     cookies: {},
     signedCookies: {},
   })

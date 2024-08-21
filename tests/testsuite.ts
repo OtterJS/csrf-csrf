@@ -3,7 +3,7 @@ import { sign } from "@otterhttp/cookie-signature"
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { assert, describe, expect, it } from "vitest"
 
-import { COOKIE_SECRET, HEADER_KEY, TEST_TOKEN } from "./utils/constants";
+import { COOKIE_SECRET, HEADER_KEY, TEST_TOKEN } from "./utils/constants"
 import { getCookieFromRequest, getCookieFromResponse, switchSecret } from "./utils/helpers"
 import { generateMocks, generateMocksWithToken, next } from "./utils/mock"
 import type { Request, Response } from "./utils/mock-types"
@@ -63,9 +63,7 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
     describe("generateToken", () => {
       it("should attach both a token and its hash to the response and return a token", () => {
         const { mockRequest, decodedCookieValue, setCookie } = generateMocksWithTokenInternal()
-        const cookieValue = signed
-          ? `s:${sign(decodedCookieValue as string, COOKIE_SECRET)}`
-          : decodedCookieValue
+        const cookieValue = signed ? `s:${sign(decodedCookieValue as string, COOKIE_SECRET)}` : decodedCookieValue
 
         const expectedSetCookieValue = serializeCookie(cookieName, cookieValue as string, {
           path,

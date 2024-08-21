@@ -11,41 +11,45 @@ export type CSRFRequest = IncomingMessage & {
 
 export type Response = ServerResponse
 
-type CookieSigningOptions = ({
-  /**
-   * Whether to sign the anti-CSRF cookie.
-   * @default false
-   */
-  signed: true
+type CookieSigningOptions =
+  | {
+      /**
+       * Whether to sign the anti-CSRF cookie.
+       * @default false
+       */
+      signed: true
 
-  /**
-   * A function that returns a cookie-signing secret or an array of secrets.
-   * The first secret should be the newest/preferred secret.
-   * You do not need to use the request object, but it is available if you need it.
-   */
-  getSigningSecret: CsrfSecretRetriever
-} | {
-  /**
-   * Whether to sign the anti-CSRF cookie.
-   * @default false
-   */
-  signed?: false | undefined
+      /**
+       * A function that returns a cookie-signing secret or an array of secrets.
+       * The first secret should be the newest/preferred secret.
+       * You do not need to use the request object, but it is available if you need it.
+       */
+      getSigningSecret: CsrfSecretRetriever
+    }
+  | {
+      /**
+       * Whether to sign the anti-CSRF cookie.
+       * @default false
+       */
+      signed?: false | undefined
 
-  /**
-   * A function that returns a cookie-signing secret or an array of secrets.
-   * The first secret should be the newest/preferred secret.
-   * You do not need to use the request object, but it is available if you need it.
-   */
-  getSigningSecret?: undefined
-})
+      /**
+       * A function that returns a cookie-signing secret or an array of secrets.
+       * The first secret should be the newest/preferred secret.
+       * You do not need to use the request object, but it is available if you need it.
+       */
+      getSigningSecret?: undefined
+    }
 
-type ResolvedCookieSigningOptions = ({
-  signed: true
-  getSigningSecret: CsrfSecretRetriever
-} | {
-  signed: false,
-  getSigningSecret: undefined
-})
+type ResolvedCookieSigningOptions =
+  | {
+      signed: true
+      getSigningSecret: CsrfSecretRetriever
+    }
+  | {
+      signed: false
+      getSigningSecret: undefined
+    }
 
 type ExtraCookieOptions = {
   /**

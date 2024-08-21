@@ -56,14 +56,17 @@ export function doubleCsrf({
   errorConfig: { statusCode = 403, message = "invalid csrf token", code = "ERR_BAD_CSRF_TOKEN" } = {},
 }: DoubleCsrfConfig): DoubleCsrfUtilities {
   const ignoredMethodsSet = new Set(ignoredMethods)
-  const defaultCookieOptions: ResolvedCSRFCookieOptions = Object.assign({
-    name: "__Host-otter.x-csrf-token",
-    sameSite: "lax",
-    path: "/",
-    secure: true,
-    httpOnly: true,
-    signed: false,
-  }, cookieOptions)
+  const defaultCookieOptions: ResolvedCSRFCookieOptions = Object.assign(
+    {
+      name: "__Host-otter.x-csrf-token",
+      sameSite: "lax",
+      path: "/",
+      secure: true,
+      httpOnly: true,
+      signed: false,
+    },
+    cookieOptions,
+  )
 
   const invalidCsrfTokenError = new ClientError(message, {
     statusCode: statusCode,
@@ -128,7 +131,7 @@ export function doubleCsrf({
     })
     const cookieContent = `${csrfToken}${delimiter}${csrfTokenHash}`
 
-    setSecretCookie(req, res, cookieContent,  Object.assign({}, defaultCookieOptions, cookieOptions))
+    setSecretCookie(req, res, cookieContent, Object.assign({}, defaultCookieOptions, cookieOptions))
 
     return csrfToken
   }
