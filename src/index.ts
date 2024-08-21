@@ -1,7 +1,7 @@
 import { createHmac, randomBytes } from "node:crypto"
-import { type SerializeOptions, serialize } from "@tinyhttp/cookie"
-import { sign } from "@tinyhttp/cookie-signature"
-import createHttpError from "http-errors"
+import { type SerializeOptions, serialize } from "@otterhttp/cookie"
+import { sign } from "@otterhttp/cookie-signature"
+import { ClientError } from "@otterhttp/errors"
 
 import type {
   CSRFRequest,
@@ -17,60 +17,33 @@ import type {
   doubleCsrfProtection,
 } from "./types"
 
-function getCookieSigningSecret(req: CSRFRequest): string {
-  const secret = req.secret
-
-  if (typeof secret === "string") return secret
-  if (Array.isArray(secret)) return secret[0]
-  throw new Error(
-    "csrf-csrf failed to retrieve cookie signing secret. Either cookie-parser is misconfigured, or cookie signing should be disabled.",
-  )
-}
-
 function setSecretCookie(
   req: CSRFRequest,
   res: Response,
   secret: string,
-  { signed, name, ...options }: ResolvedCSRFCookieOptions,
+  { signed, getSigningSecret, name, ...options }: ResolvedCSRFCookieOptions,
 ): void {
-  const value = signed ? `s:${sign(secret, getCookieSigningSecret(req))}` : secret
+  if (!signed) {
+    setCookie(res, name, secret, options)
+    return
+  }
+
+  let signingSecret = getSigningSecret(req)
+  if (Array.isArray(signingSecret)) signingSecret = signingSecret[0]
+
+  const value = `s:${sign(secret, signingSecret)}`
   setCookie(res, name, value, options)
 }
 
 function setCookie(res: Response, name: string, value: string, options: SerializeOptions): void {
   const data = serialize(name, value, options)
-  const existingCookieHeader = res.getHeader("set-cookie")
-
-  if (existingCookieHeader === undefined) {
-    res.setHeader("set-cookie", [data])
-    return
-  }
-
-  if (typeof existingCookieHeader === "string") {
-    res.setHeader("set-cookie", [existingCookieHeader, data])
-    return
-  }
-
-  if (Array.isArray(existingCookieHeader)) {
-    res.setHeader("set-cookie", existingCookieHeader.concat(data))
-    return
-  }
-
-  throw new Error()
+  res.appendHeader("set-cookie", data)
 }
 
 export function doubleCsrf({
   getSecret,
   getSessionIdentifier,
-  cookieOptions: {
-    name: cookieName = "__Host-otter.x-csrf-token",
-    sameSite: cookieSameSite = "lax",
-    path: cookiePath = "/",
-    secure: cookieSecure = true,
-    httpOnly: cookieHttpOnly = true,
-    signed: cookieSigned = false,
-    ...remainingCookieOptions
-  } = {},
+  cookieOptions,
   delimiter = "|",
   size = 64,
   hmacAlgorithm = "sha256",
@@ -83,17 +56,17 @@ export function doubleCsrf({
   errorConfig: { statusCode = 403, message = "invalid csrf token", code = "ERR_BAD_CSRF_TOKEN" } = {},
 }: DoubleCsrfConfig): DoubleCsrfUtilities {
   const ignoredMethodsSet = new Set(ignoredMethods)
-  const defaultCookieOptions = {
-    name: cookieName,
-    sameSite: cookieSameSite,
-    path: cookiePath,
-    secure: cookieSecure,
-    httpOnly: cookieHttpOnly,
-    signed: cookieSigned,
-    ...remainingCookieOptions,
-  } satisfies ResolvedCSRFCookieOptions
+  const defaultCookieOptions: ResolvedCSRFCookieOptions = Object.assign({
+    name: "__Host-otter.x-csrf-token",
+    sameSite: "lax",
+    path: "/",
+    secure: true,
+    httpOnly: true,
+    signed: false,
+  }, cookieOptions)
 
-  const invalidCsrfTokenError = createHttpError(statusCode, message, {
+  const invalidCsrfTokenError = new ClientError(message, {
+    statusCode: statusCode,
     code: code,
   })
 
@@ -155,17 +128,14 @@ export function doubleCsrf({
     })
     const cookieContent = `${csrfToken}${delimiter}${csrfTokenHash}`
 
-    setSecretCookie(req, res, cookieContent, {
-      ...defaultCookieOptions,
-      ...cookieOptions,
-    })
+    setSecretCookie(req, res, cookieContent,  Object.assign({}, defaultCookieOptions, cookieOptions))
 
     return csrfToken
   }
 
-  const getCsrfCookieFromRequest = cookieSigned
-    ? (req: CSRFRequest) => req.signedCookies?.[cookieName]
-    : (req: CSRFRequest) => req.cookies?.[cookieName]
+  const getCsrfCookieFromRequest = defaultCookieOptions.signed
+    ? (req: CSRFRequest) => req.signedCookies?.[defaultCookieOptions.name]
+    : (req: CSRFRequest) => req.cookies?.[defaultCookieOptions.name]
 
   // given a secret array, iterates over it and checks whether one of the secrets makes the token and hash pair valid
   const validateTokenAndHashPair: CsrfTokenAndHashPairValidator = (
