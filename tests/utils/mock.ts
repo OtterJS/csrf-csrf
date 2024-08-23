@@ -1,23 +1,39 @@
-import { IncomingMessage, ServerResponse } from "node:http"
+import { ServerResponse } from "node:http"
 import type { Socket } from "node:net"
-import { parse } from "@otterhttp/cookie"
-import { cookieParser, signedCookie } from "@tinyhttp/cookie-parser"
+import { parse, serialize, type SerializeOptions } from "@otterhttp/cookie"
+import {sign, unsign} from "@otterhttp/cookie-signature"
+import { Request } from "@otterhttp/request"
 import { assert } from "vitest"
 
 import { COOKIE_SECRET, HEADER_KEY } from "./constants.js"
 import { getCookieFromRequest, getCookieValueFromResponse } from "./helpers.js"
-import type { Request, Response } from "./mock-types"
 
-import type { CsrfRequestValidator, CsrfTokenCreator } from "@/types.js"
+import type { CSRFRequest, CSRFResponse, CsrfRequestValidator, CsrfTokenCreator } from "@/types.js"
 
 // Create some request and response mocks
 export const generateMocks = () => {
-  const mockRequest: Request = Object.assign(new IncomingMessage(undefined as unknown as Socket), {
-    cookies: {},
-    signedCookies: {},
+  const mockRequest: CSRFRequest = Object.assign(new Request(undefined as unknown as Socket), {
+    appSettings: {
+      cookieParsing: {
+        encodedCookieMatcher: (value: string) => decodeURIComponent(value).startsWith("s:"),
+        cookieDecoder: (value: string) => {
+          const result = unsign(decodeURIComponent(value).slice(2), COOKIE_SECRET)
+          if (result === false) throw new Error("Failed to parse cookie")
+          return result
+        }
+      }
+    }
   })
 
-  const mockResponse: Response = new ServerResponse(mockRequest)
+  const mockResponse: CSRFResponse = Object.assign(new ServerResponse(mockRequest), {
+    cookie: function (this: ServerResponse<CSRFRequest>, name: string, value: string, options?: SerializeOptions): unknown {
+      const resolvedOptions = Object.assign({}, {
+        encode: (value: string) => encodeURIComponent(`s:${sign(value, COOKIE_SECRET)}`)
+      }, options)
+      this.appendHeader('set-cookie', serialize(name, value, resolvedOptions))
+      return this
+    },
+  })
 
   return {
     mockRequest,
@@ -27,11 +43,8 @@ export const generateMocks = () => {
 
 export const next = () => undefined
 
-export const cookieParserMiddleware = cookieParser(COOKIE_SECRET)
-
 export type GenerateMocksWithTokenOptions = {
   cookieName: string
-  signed: boolean
   generateToken: CsrfTokenCreator
   validateRequest: CsrfRequestValidator
 }
@@ -40,7 +53,6 @@ export type GenerateMocksWithTokenOptions = {
 // Set them up as if they have been pre-processed in a valid state.
 export const generateMocksWithToken = ({
   cookieName,
-  signed,
   generateToken,
   validateRequest,
 }: GenerateMocksWithTokenOptions) => {
@@ -49,15 +61,11 @@ export const generateMocksWithToken = ({
   const csrfToken = generateToken(mockRequest, mockResponse)
   const { setCookie, cookieValue } = getCookieValueFromResponse(mockResponse)
   mockRequest.headers.cookie = `${cookieName}=${cookieValue};`
-  const decodedCookieValue = signed
-    ? signedCookie(parse(mockRequest.headers.cookie)[cookieName], COOKIE_SECRET)
-    : // signedCookie already decodes the value, but we need it if it's not signed.
-      decodeURIComponent(cookieValue)
-  // Have to delete the cookies object otherwise cookieParser will skip its parsing.
+
   // @ts-expect-error
-  mockRequest.cookies = undefined
-  cookieParserMiddleware(mockRequest, mockResponse, next)
-  assert.equal(getCookieFromRequest(cookieName, signed, mockRequest), decodedCookieValue)
+  mockRequest._cookies = null
+  const decodedCookieValue = mockRequest.cookies[cookieName].value
+  assert.equal(getCookieFromRequest(cookieName, mockRequest), decodedCookieValue)
 
   mockRequest.headers[HEADER_KEY] = csrfToken
 

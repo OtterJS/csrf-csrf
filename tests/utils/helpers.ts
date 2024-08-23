@@ -1,4 +1,6 @@
-import type { Request, Response } from "./mock-types.js"
+import { Cookie } from "@otterhttp/request";
+
+import type { CSRFRequest, CSRFResponse } from "@/types"
 
 const SECRET_1 = "secrets must be unique and must not"
 const SECRET_2 = "be used elsewhere, nor be sentences"
@@ -24,7 +26,7 @@ export const { getSingleSecret, getMultipleSecrets, switchSecret } = (() => {
  * @param res The response object
  * @returns The set-cookie header string and the cookie value containing both the csrf token and its hash
  */
-export const getCookieValueFromResponse = (res: Response) => {
+export const getCookieValueFromResponse = (res: CSRFResponse) => {
   const setCookie = res.getHeader("set-cookie") as string | string[]
   const setCookieString: string = Array.isArray(setCookie) ? setCookie[0] : setCookie
   const cookieValue = setCookieString.substring(setCookieString.indexOf("=") + 1, setCookieString.indexOf(";"))
@@ -36,12 +38,12 @@ export const getCookieValueFromResponse = (res: Response) => {
 }
 
 // Returns the cookie value from the request, accommodate signed and unsigned.
-export const getCookieFromRequest = (cookieName: string, signed: boolean, req: Request) =>
+export const getCookieFromRequest = (cookieName: string, req: CSRFRequest) =>
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-  signed ? req.signedCookies[cookieName] : req.cookies[cookieName]
+  req.cookies[cookieName].value
 
 // as of now, we only have one cookie, so we can just return the first one
-export const getCookieFromResponse = (res: Response) => {
+export const getCookieFromResponse = (res: CSRFResponse) => {
   const setCookie = res.getHeader("set-cookie") as string | string[]
   const setCookieString: string = Array.isArray(setCookie) ? setCookie[0] : setCookie
   const cookieValue = setCookieString.substring(setCookieString.indexOf("=") + 1, setCookieString.indexOf(";"))
@@ -65,8 +67,8 @@ export const attachResponseValuesToRequest = ({
   cookieName,
   headerKey,
 }: {
-  request: Request
-  response: Response
+  request: CSRFRequest
+  response: CSRFResponse
   bodyResponseToken: string
   cookieName: string
   headerKey: string
@@ -74,8 +76,9 @@ export const attachResponseValuesToRequest = ({
   const { cookieValue } = getCookieValueFromResponse(response)
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  request.cookies[cookieName] = decodeURIComponent(cookieValue)
   request.headers.cookie = `${cookieName}=${cookieValue};`
+  // @ts-expect-error
+  request._cookies = null
 
   request.headers[headerKey] = bodyResponseToken
 }

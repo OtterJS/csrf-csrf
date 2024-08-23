@@ -12,27 +12,16 @@ import {
 } from "./utils/helpers.js"
 import { generateMocks, generateMocksWithToken } from "./utils/mock.js"
 
-createTestSuite("csrf-csrf unsigned, single secret", {
+createTestSuite("csrf-csrf single secret", {
   getSecret: getSingleSecret,
   getSessionIdentifier: legacySessionIdentifier,
 })
-createTestSuite("csrf-csrf signed, single secret", {
-  cookieOptions: { signed: true, getSigningSecret: () => COOKIE_SECRET },
-  getSecret: getSingleSecret,
-  getSessionIdentifier: legacySessionIdentifier,
-  errorConfig: {
-    statusCode: 400,
-    message: "NOT GOOD",
-    code: "BADTOKEN",
-  },
-})
-createTestSuite("csrf-csrf signed with custom options, single secret", {
+
+createTestSuite("csrf-csrf custom options, single secret", {
   getSecret: getSingleSecret,
   getSessionIdentifier: legacySessionIdentifier,
   cookieOptions: {
     name: "__Host.test-the-thing.token",
-    signed: true,
-    getSigningSecret: () => COOKIE_SECRET,
     sameSite: "strict",
   },
   size: 128,
@@ -40,24 +29,16 @@ createTestSuite("csrf-csrf signed with custom options, single secret", {
   hmacAlgorithm: "sha512",
 })
 
-createTestSuite("csrf-csrf unsigned, multiple secrets", {
+createTestSuite("csrf-csrf multiple secrets", {
   getSecret: getMultipleSecrets,
   getSessionIdentifier: legacySessionIdentifier,
 })
-createTestSuite("csrf-csrf signed, multiple secrets", {
-  cookieOptions: { signed: true, getSigningSecret: () => COOKIE_SECRET },
-  getSecret: getMultipleSecrets,
-  getSessionIdentifier: legacySessionIdentifier,
-  delimiter: "~",
-  hmacAlgorithm: "sha512",
-})
-createTestSuite("csrf-csrf signed with custom options, multiple secrets", {
+
+createTestSuite("csrf-csrf custom options, multiple secrets", {
   getSecret: getMultipleSecrets,
   getSessionIdentifier: legacySessionIdentifier,
   cookieOptions: {
     name: "__Host.test-the-thing.token",
-    signed: true,
-    getSigningSecret: () => COOKIE_SECRET,
     sameSite: "strict",
   },
   size: 128,
@@ -73,7 +54,7 @@ describe("csrf-csrf token-rotation", () => {
   const doubleCsrfOptions: Omit<DoubleCsrfConfig, "getSecret" | "getSessionIdentifier"> = {}
 
   const {
-    cookieOptions: { name: cookieName = "__Host-otter.x-csrf-token", signed = false } = {},
+    cookieOptions: { name: cookieName = "__Host-otter.x-csrf-token" } = {},
   } = doubleCsrfOptions
 
   const SECRET1 = "secret1"
@@ -89,7 +70,6 @@ describe("csrf-csrf token-rotation", () => {
     return {
       ...generateMocksWithToken({
         cookieName,
-        signed,
         generateToken,
         validateRequest,
       }),
