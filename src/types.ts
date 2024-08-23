@@ -4,52 +4,15 @@ import type { HttpError, statusMessages } from "@otterhttp/errors"
 
 type NextFunction = () => unknown
 
+type Cookie = { value: string }
+
 export type CSRFRequest = IncomingMessage & {
-  signedCookies?: Record<string, unknown>
-  cookies?: Record<string, unknown>
+  cookies: Record<string, Cookie>
 }
 
-export type Response = ServerResponse
-
-type CookieSigningOptions =
-  | {
-      /**
-       * Whether to sign the anti-CSRF cookie.
-       * @default false
-       */
-      signed: true
-
-      /**
-       * A function that returns a cookie-signing secret or an array of secrets.
-       * The first secret should be the newest/preferred secret.
-       * You do not need to use the request object, but it is available if you need it.
-       */
-      getSigningSecret: CsrfSecretRetriever
-    }
-  | {
-      /**
-       * Whether to sign the anti-CSRF cookie.
-       * @default false
-       */
-      signed?: false | undefined
-
-      /**
-       * A function that returns a cookie-signing secret or an array of secrets.
-       * The first secret should be the newest/preferred secret.
-       * You do not need to use the request object, but it is available if you need it.
-       */
-      getSigningSecret?: undefined
-    }
-
-type ResolvedCookieSigningOptions =
-  | {
-      signed: true
-      getSigningSecret: CsrfSecretRetriever
-    }
-  | {
-      signed: false
-      getSigningSecret: undefined
-    }
+export type CSRFResponse = ServerResponse & {
+  cookie: (name: string, value: string, options?: SerializeOptions) => unknown
+}
 
 type ExtraCookieOptions = {
   /**
@@ -59,12 +22,12 @@ type ExtraCookieOptions = {
   name?: string
 }
 
-export type CSRFCookieOptions = SerializeOptions & CookieSigningOptions & ExtraCookieOptions
-export type ResolvedCSRFCookieOptions = SerializeOptions & ResolvedCookieSigningOptions & Required<ExtraCookieOptions>
+export type CSRFCookieOptions = SerializeOptions & ExtraCookieOptions
+export type ResolvedCSRFCookieOptions = SerializeOptions & Required<ExtraCookieOptions>
 
 export type TokenRetriever = (req: CSRFRequest) => string | null | undefined
 export type CsrfSecretRetriever = (req?: CSRFRequest) => string | Array<string>
-export type doubleCsrfProtection = (req: CSRFRequest, res: Response, next: NextFunction) => void
+export type doubleCsrfProtection = (req: CSRFRequest, res: CSRFResponse, next: NextFunction) => void
 export type RequestMethod = "GET" | "HEAD" | "PATCH" | "PUT" | "POST" | "DELETE" | "CONNECT" | "OPTIONS" | "TRACE"
 export type CsrfIgnoredMethods = Array<RequestMethod>
 export type CsrfRequestValidator = (req: CSRFRequest) => boolean
@@ -80,8 +43,8 @@ export type CsrfTokenAndHashPairValidator = (
     possibleSecrets: Array<string>
   },
 ) => boolean
-export type CsrfCookieSetter = (res: Response, name: string, value: string, options: CSRFCookieOptions) => void
-export type CsrfTokenCreator = (req: CSRFRequest, res: Response, options?: GenerateCsrfTokenOptions) => string
+export type CsrfCookieSetter = (res: CSRFResponse, name: string, value: string, options: CSRFCookieOptions) => void
+export type CsrfTokenCreator = (req: CSRFRequest, res: CSRFResponse, options?: GenerateCsrfTokenOptions) => string
 export type CsrfErrorConfig = {
   statusCode: keyof typeof statusMessages
   message: string

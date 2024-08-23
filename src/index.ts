@@ -1,6 +1,4 @@
 import { createHmac, randomBytes } from "node:crypto"
-import { type SerializeOptions, serialize } from "@otterhttp/cookie"
-import { sign } from "@otterhttp/cookie-signature"
 import { ClientError } from "@otterhttp/errors"
 
 import type {
@@ -13,31 +11,17 @@ import type {
   GenerateCsrfTokenConfig,
   RequestMethod,
   ResolvedCSRFCookieOptions,
-  Response,
+  CSRFResponse,
   doubleCsrfProtection,
 } from "./types"
 
 function setSecretCookie(
   req: CSRFRequest,
-  res: Response,
+  res: CSRFResponse,
   secret: string,
-  { signed, getSigningSecret, name, ...options }: ResolvedCSRFCookieOptions,
+  { name, ...options }: ResolvedCSRFCookieOptions,
 ): void {
-  if (!signed) {
-    setCookie(res, name, secret, options)
-    return
-  }
-
-  let signingSecret = getSigningSecret(req)
-  if (Array.isArray(signingSecret)) signingSecret = signingSecret[0]
-
-  const value = `s:${sign(secret, signingSecret)}`
-  setCookie(res, name, value, options)
-}
-
-function setCookie(res: Response, name: string, value: string, options: SerializeOptions): void {
-  const data = serialize(name, value, options)
-  res.appendHeader("set-cookie", data)
+  res.cookie(name, secret, options)
 }
 
 export function doubleCsrf({
@@ -81,13 +65,13 @@ export function doubleCsrf({
     const possibleSecrets = Array.isArray(getSecretResult) ? getSecretResult : [getSecretResult]
 
     const csrfCookie = getCsrfCookieFromRequest(req)
-    // If ovewrite is true, always generate a new token.
+    // If overwrite is true, always generate a new token.
     // If overwrite is false and there is no existing token, generate a new token.
-    // If overwrite is false and there is an existin token then validate the token and hash pair
+    // If overwrite is false and there is an existing token then validate the token and hash pair
     // the existing cookie and reuse it if it is valid. If it isn't valid, then either throw or
     // generate a new token based on validateOnReuse.
-    if (typeof csrfCookie === "string" && !overwrite) {
-      const [csrfToken, csrfTokenHash] = csrfCookie.split(delimiter)
+    if (typeof csrfCookie === "object" && !overwrite) {
+      const [csrfToken, csrfTokenHash] = csrfCookie.value.split(delimiter)
       if (
         validateTokenAndHashPair(req, {
           incomingToken: csrfToken,
@@ -122,7 +106,7 @@ export function doubleCsrf({
   // Do NOT send the csrfToken as a cookie, embed it in your HTML response, or as JSON.
   const generateToken: CsrfTokenCreator = (
     req: CSRFRequest,
-    res: Response,
+    res: CSRFResponse,
     { cookieOptions = defaultCookieOptions, overwrite = false, validateOnReuse = true } = {},
   ) => {
     const { csrfToken, csrfTokenHash } = generateTokenAndHash(req, {
@@ -136,9 +120,7 @@ export function doubleCsrf({
     return csrfToken
   }
 
-  const getCsrfCookieFromRequest = defaultCookieOptions.signed
-    ? (req: CSRFRequest) => req.signedCookies?.[defaultCookieOptions.name]
-    : (req: CSRFRequest) => req.cookies?.[defaultCookieOptions.name]
+  const getCsrfCookieFromRequest = (req: CSRFRequest) => req.cookies?.[defaultCookieOptions.name]
 
   // given a secret array, iterates over it and checks whether one of the secrets makes the token and hash pair valid
   const validateTokenAndHashPair: CsrfTokenAndHashPairValidator = (
@@ -160,10 +142,10 @@ export function doubleCsrf({
   const validateRequest: CsrfRequestValidator = (req) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const csrfCookie = getCsrfCookieFromRequest(req)
-    if (typeof csrfCookie !== "string") return false
+    if (typeof csrfCookie !== "object") return false
 
     // cookie has the form {token}{delimiter}{hash}
-    const [csrfTokenFromCookie, csrfTokenHash] = csrfCookie.split(delimiter)
+    const [csrfTokenFromCookie, csrfTokenHash] = csrfCookie.value.split(delimiter)
 
     // csrf token from the request
     const csrfTokenFromRequest = getTokenFromRequest(req) as string

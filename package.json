@@ -43,7 +43,8 @@
   ],
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@tinyhttp/cookie-parser": "^2.0.6",
+    "@otterhttp/cookie-signature": "^3.0.0",
+    "@otterhttp/request": "^3.1.1",
     "@types/node": "^20.14.10",
     "@vitest/coverage-istanbul": "^2.0.3",
     "standard-version": "^9.5.0",
@@ -54,7 +55,6 @@
   },
   "dependencies": {
     "@otterhttp/cookie": "^3.0.0",
-    "@otterhttp/cookie-signature": "^3.0.0",
     "@otterhttp/errors": "^0.2.0"
   },
   "engines": {
