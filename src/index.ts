@@ -3,6 +3,7 @@ import { ClientError } from "@otterhttp/errors"
 
 import type {
   CSRFRequest,
+  CSRFResponse,
   CsrfRequestValidator,
   CsrfTokenAndHashPairValidator,
   CsrfTokenCreator,
@@ -11,7 +12,6 @@ import type {
   GenerateCsrfTokenConfig,
   RequestMethod,
   ResolvedCSRFCookieOptions,
-  CSRFResponse,
   doubleCsrfProtection,
 } from "./types"
 

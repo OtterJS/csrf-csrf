@@ -8,8 +8,8 @@ import { getCookieFromRequest, getCookieFromResponse, switchSecret } from "./uti
 import { generateMocks, generateMocksWithToken, next } from "./utils/mock"
 
 import { doubleCsrf } from "@/index"
-import type { DoubleCsrfConfig, CSRFRequest, CSRFResponse } from "@/types"
-import { Cookie } from "@otterhttp/request";
+import type { CSRFRequest, CSRFResponse, DoubleCsrfConfig } from "@/types"
+import { Cookie } from "@otterhttp/request"
 
 type CreateTestSuite = (
   name: string,

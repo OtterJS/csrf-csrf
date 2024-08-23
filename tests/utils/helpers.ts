@@ -1,5 +1,3 @@
-import { Cookie } from "@otterhttp/request";
-
 import type { CSRFRequest, CSRFResponse } from "@/types"
 
 const SECRET_1 = "secrets must be unique and must not"

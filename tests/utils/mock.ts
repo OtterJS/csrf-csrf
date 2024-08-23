@@ -1,7 +1,7 @@
 import { ServerResponse } from "node:http"
 import type { Socket } from "node:net"
-import { parse, serialize, type SerializeOptions } from "@otterhttp/cookie"
-import {sign, unsign} from "@otterhttp/cookie-signature"
+import { type SerializeOptions, parse, serialize } from "@otterhttp/cookie"
+import { sign, unsign } from "@otterhttp/cookie-signature"
 import { Request } from "@otterhttp/request"
 import { assert } from "vitest"
 
@@ -20,17 +20,26 @@ export const generateMocks = () => {
           const result = unsign(decodeURIComponent(value).slice(2), COOKIE_SECRET)
           if (result === false) throw new Error("Failed to parse cookie")
           return result
-        }
-      }
-    }
+        },
+      },
+    },
   })
 
   const mockResponse: CSRFResponse = Object.assign(new ServerResponse(mockRequest), {
-    cookie: function (this: ServerResponse<CSRFRequest>, name: string, value: string, options?: SerializeOptions): unknown {
-      const resolvedOptions = Object.assign({}, {
-        encode: (value: string) => encodeURIComponent(`s:${sign(value, COOKIE_SECRET)}`)
-      }, options)
-      this.appendHeader('set-cookie', serialize(name, value, resolvedOptions))
+    cookie: function (
+      this: ServerResponse<CSRFRequest>,
+      name: string,
+      value: string,
+      options?: SerializeOptions,
+    ): unknown {
+      const resolvedOptions = Object.assign(
+        {},
+        {
+          encode: (value: string) => encodeURIComponent(`s:${sign(value, COOKIE_SECRET)}`),
+        },
+        options,
+      )
+      this.appendHeader("set-cookie", serialize(name, value, resolvedOptions))
       return this
     },
   })
