@@ -79,7 +79,7 @@ export const generateMocksWithToken = async ({
   mockRequest.headers[HEADER_KEY] = csrfToken
 
   // Once a token has been generated, the request should be setup as valid
-  assert.isTrue(await validateRequest(mockRequest))
+  assert.isTrue(await validateRequest(mockRequest, mockResponse))
   return {
     csrfToken,
     cookieValue,
