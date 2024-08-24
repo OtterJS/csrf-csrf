@@ -10,7 +10,7 @@ export type CSRFRequest = IncomingMessage & {
   cookies: Record<string, Cookie>
 }
 
-export type CSRFResponse = ServerResponse & {
+export type CSRFResponse<Request extends CSRFRequest = CSRFRequest> = ServerResponse<Request> & {
   cookie: (name: string, value: string, options?: SerializeOptions) => unknown
 }
 
@@ -25,15 +25,30 @@ type ExtraCookieOptions = {
 export type CSRFCookieOptions = SerializeOptions & ExtraCookieOptions
 export type ResolvedCSRFCookieOptions = SerializeOptions & Required<ExtraCookieOptions>
 
-export type TokenRetriever = (req: CSRFRequest, res: CSRFResponse) => string | null | undefined | Promise<string | null | undefined>
-export type CsrfSecretRetriever = (req: CSRFRequest, res: CSRFResponse) => string | Array<string> | Promise<string | Array<string>>
-export type doubleCsrfProtection = (req: CSRFRequest, res: CSRFResponse, next: NextFunction) => Promise<void>
+export type TokenRetriever<
+  Request extends CSRFRequest = CSRFRequest,
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+> = (req: Request, res: Response) => string | null | undefined | Promise<string | null | undefined>
+export type CsrfSecretRetriever<
+  Request extends CSRFRequest = CSRFRequest,
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+> = (req: Request, res: Response) => string | Array<string> | Promise<string | Array<string>>
+export type DoubleCsrfProtection<
+  Request extends CSRFRequest = CSRFRequest,
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+> = (req: Request, res: Response, next: NextFunction) => Promise<void>
 export type RequestMethod = "GET" | "HEAD" | "PATCH" | "PUT" | "POST" | "DELETE" | "CONNECT" | "OPTIONS" | "TRACE"
 export type CsrfIgnoredMethods = Array<RequestMethod>
-export type CsrfRequestValidator = (req: CSRFRequest, res: CSRFResponse) => Promise<boolean>
-export type CsrfTokenAndHashPairValidator = (
-  req: CSRFRequest,
-  res: CSRFResponse,
+export type CsrfRequestValidator<
+  Request extends CSRFRequest = CSRFRequest,
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+> = (req: Request, res: Response) => Promise<boolean>
+export type CsrfTokenAndHashPairValidator<
+  Request extends CSRFRequest = CSRFRequest,
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+> = (
+  req: Request,
+  res: Response,
   {
     incomingHash,
     incomingToken,
@@ -44,7 +59,10 @@ export type CsrfTokenAndHashPairValidator = (
     possibleSecrets: Array<string>
   },
 ) => Promise<boolean>
-export type CsrfTokenCreator = (req: CSRFRequest, res: CSRFResponse, options?: GenerateCsrfTokenOptions) => Promise<string>
+export type CsrfTokenCreator<
+  Request extends CSRFRequest = CSRFRequest,
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+> = (req: Request, res: Response, options?: GenerateCsrfTokenOptions) => Promise<string>
 export type CsrfErrorConfig = {
   statusCode: keyof typeof statusMessages
   message: string
@@ -57,7 +75,10 @@ export type GenerateCsrfTokenConfig = {
   cookieOptions: CSRFCookieOptions
 }
 export type GenerateCsrfTokenOptions = Partial<GenerateCsrfTokenConfig>
-export type DoubleCsrfConfig = {
+export type DoubleCsrfConfig<
+  Request extends CSRFRequest = CSRFRequest,
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+> = {
   /**
    * A function that returns a secret or an array of secrets.
    * The first secret should be the newest/preferred secret.
@@ -76,7 +97,7 @@ export type DoubleCsrfConfig = {
    * }
    * ```
    */
-  getSecret: CsrfSecretRetriever
+  getSecret: CsrfSecretRetriever<Request, Response>
 
   /**
    * A function that should return the session identifier for the request.
@@ -84,7 +105,7 @@ export type DoubleCsrfConfig = {
    * @returns the session identifier for the request
    * @default (req) => req.session.id
    */
-  getSessionIdentifier: (req: CSRFRequest, res: CSRFResponse) => string | Promise<string>
+  getSessionIdentifier: (req: Request, res: Response) => string | Promise<string>
 
   /**
    * The options for HTTPOnly cookie that will be set on the response.
@@ -126,7 +147,7 @@ export type DoubleCsrfConfig = {
    * }
    * ```
    */
-  getTokenFromRequest?: TokenRetriever
+  getTokenFromRequest?: TokenRetriever<Request, Response>
 
   /**
    * Configuration for the error that is thrown any time XSRF token validation fails.
@@ -135,7 +156,10 @@ export type DoubleCsrfConfig = {
   errorConfig?: CsrfErrorConfigOptions
 }
 
-export interface DoubleCsrfUtilities {
+export interface DoubleCsrfUtilities<
+  Request extends CSRFRequest = CSRFRequest,
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+> {
   /**
    * The error that will be thrown if a request is invalid.
    */
@@ -158,14 +182,14 @@ export interface DoubleCsrfUtilities {
    * });
    * ```
    */
-  generateToken: CsrfTokenCreator
+  generateToken: CsrfTokenCreator<Request, Response>
 
   /**
    * Validates the request, assuring that the csrf token and hash pair are valid.
    * @param req
    * @returns true if the request is valid, false otherwise
    */
-  validateRequest: CsrfRequestValidator
+  validateRequest: CsrfRequestValidator<Request, Response>
 
   /**
    * Middleware that provides CSRF protection.
@@ -181,5 +205,5 @@ export interface DoubleCsrfUtilities {
    * });
    * ```
    */
-  doubleCsrfProtection: doubleCsrfProtection
+  doubleCsrfProtection: DoubleCsrfProtection<Request, Response>
 }
