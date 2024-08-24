@@ -60,7 +60,7 @@ describe("csrf-csrf token-rotation", () => {
   const SECRET1 = "secret1"
   const SECRET2 = "secret2"
 
-  const generateMocksWithMultipleSecrets = (secrets: string[] | string) => {
+  const generateMocksWithMultipleSecrets = async (secrets: string[] | string) => {
     const { generateToken, validateRequest } = doubleCsrf({
       ...doubleCsrfOptions,
       getSecret: () => secrets,
@@ -68,7 +68,7 @@ describe("csrf-csrf token-rotation", () => {
     })
 
     return {
-      ...generateMocksWithToken({
+      ...await generateMocksWithToken({
         cookieName,
         generateToken,
         validateRequest,
@@ -78,62 +78,67 @@ describe("csrf-csrf token-rotation", () => {
     }
   }
 
-  describe("validating requests with combination of different secret/s", () => {
+  describe("validating requests with combination of different secret/s", async () => {
     // Generate request --> CSRF token with secret1
     // We will then match a request with token and secret1 with other combinations of secrets
-    const { mockRequest, validateRequest } = generateMocksWithMultipleSecrets(SECRET1)
-    assert.isTrue(validateRequest(mockRequest))
+    const { mockRequest, validateRequest } = await generateMocksWithMultipleSecrets(SECRET1)
+    assert.isTrue(await validateRequest(mockRequest))
 
-    it("should be valid with 1 matching secret", () => {
-      assert.isTrue(generateMocksWithMultipleSecrets(SECRET1).validateRequest(mockRequest))
+    it("should be valid with 1 matching secret", async () => {
+      const { validateRequest } = await generateMocksWithMultipleSecrets(SECRET1)
+      assert.isTrue(await validateRequest(mockRequest))
     })
 
-    it("should be valid with 1/1 matching secret in array", () => {
-      assert.isTrue(generateMocksWithMultipleSecrets([SECRET1]).validateRequest(mockRequest))
+    it("should be valid with 1/1 matching secret in array", async () => {
+      const { validateRequest } = await generateMocksWithMultipleSecrets([SECRET1])
+      assert.isTrue(await validateRequest(mockRequest))
     })
 
-    it("should be valid with 1/2 matching secrets in array, first secret matches", () => {
-      assert.isTrue(generateMocksWithMultipleSecrets([SECRET1, SECRET2]).validateRequest(mockRequest))
+    it("should be valid with 1/2 matching secrets in array, first secret matches", async () => {
+      const { validateRequest } = await generateMocksWithMultipleSecrets([SECRET1, SECRET2])
+      assert.isTrue(await validateRequest(mockRequest))
     })
 
-    it("should be valid with 1/2 matching secrets in array, second secret matches", () => {
-      assert.isTrue(generateMocksWithMultipleSecrets([SECRET2, SECRET1]).validateRequest(mockRequest))
+    it("should be valid with 1/2 matching secrets in array, second secret matches", async () => {
+      const { validateRequest } = await generateMocksWithMultipleSecrets([SECRET2, SECRET1])
+      assert.isTrue(await validateRequest(mockRequest))
     })
 
-    it("should be invalid with 0/1 matching secret in array", () => {
-      assert.isFalse(generateMocksWithMultipleSecrets([SECRET2]).validateRequest(mockRequest))
+    it("should be invalid with 0/1 matching secret in array", async () => {
+      const { validateRequest } = await generateMocksWithMultipleSecrets([SECRET2])
+      assert.isFalse(await validateRequest(mockRequest))
     })
 
-    it("should be invalid with 0/2 matching secrets in array", () => {
-      assert.isFalse(generateMocksWithMultipleSecrets(SECRET2).validateRequest(mockRequest))
+    it("should be invalid with 0/2 matching secrets in array", async () => {
+      const { validateRequest } = await generateMocksWithMultipleSecrets(SECRET2)
+      assert.isFalse(await validateRequest(mockRequest))
     })
 
-    it("should be invalid with 0/3 matching secrets in array", () => {
-      assert.isFalse(
-        generateMocksWithMultipleSecrets(["invalid0", "invalid1", "invalid2"]).validateRequest(mockRequest),
-      )
+    it("should be invalid with 0/3 matching secrets in array", async () => {
+      const { validateRequest } = await generateMocksWithMultipleSecrets(["invalid0", "invalid1", "invalid2"])
+      assert.isFalse(await validateRequest(mockRequest))
     })
   })
 
-  describe("should generate tokens correctly, simulating token rotations", () => {
+  describe("should generate tokens correctly, simulating token rotations", async () => {
     const getEmptyResponse = () => {
       const { mockResponse } = generateMocks()
       return mockResponse
     }
 
-    const { validateRequest: validateRequestWithSecret1 } = generateMocksWithMultipleSecrets(SECRET1)
+    const { validateRequest: validateRequestWithSecret1 } = await generateMocksWithMultipleSecrets(SECRET1)
 
-    const { validateRequest: validateRequestWithSecret2 } = generateMocksWithMultipleSecrets(SECRET2)
+    const { validateRequest: validateRequestWithSecret2 } = await generateMocksWithMultipleSecrets(SECRET2)
 
-    const { generateToken: generateTokenWithSecret1And2 } = generateMocksWithMultipleSecrets([SECRET1, SECRET2])
+    const { generateToken: generateTokenWithSecret1And2 } = await generateMocksWithMultipleSecrets([SECRET1, SECRET2])
 
-    const { generateToken: generateTokenWithSecret2And1 } = generateMocksWithMultipleSecrets([SECRET2, SECRET1])
+    const { generateToken: generateTokenWithSecret2And1 } = await generateMocksWithMultipleSecrets([SECRET2, SECRET1])
 
-    it("should reuse existing token on request with SECRET1, while current is [SECRET1, SECRET2]", () => {
-      const { mockRequest } = generateMocksWithMultipleSecrets(SECRET1)
+    it("should reuse existing token on request with SECRET1, while current is [SECRET1, SECRET2]", async () => {
+      const { mockRequest } = await generateMocksWithMultipleSecrets(SECRET1)
       const mockResponse = getEmptyResponse()
 
-      const token = generateTokenWithSecret1And2(mockRequest, mockResponse)
+      const token = await generateTokenWithSecret1And2(mockRequest, mockResponse)
       attachResponseValuesToRequest({
         request: mockRequest,
         response: mockResponse,
@@ -142,15 +147,15 @@ describe("csrf-csrf token-rotation", () => {
         bodyResponseToken: token,
       })
 
-      assert.isTrue(validateRequestWithSecret1(mockRequest))
-      assert.isFalse(validateRequestWithSecret2(mockRequest))
+      assert.isTrue(await validateRequestWithSecret1(mockRequest))
+      assert.isFalse(await validateRequestWithSecret2(mockRequest))
     })
 
-    it("should reuse existing token on request with SECRET1, while current is [SECRET2, SECRET1]", () => {
-      const { mockRequest } = generateMocksWithMultipleSecrets(SECRET1)
+    it("should reuse existing token on request with SECRET1, while current is [SECRET2, SECRET1]", async () => {
+      const { mockRequest } = await generateMocksWithMultipleSecrets(SECRET1)
       const mockResponse = getEmptyResponse()
 
-      const token = generateTokenWithSecret2And1(mockRequest, mockResponse)
+      const token = await generateTokenWithSecret2And1(mockRequest, mockResponse)
       attachResponseValuesToRequest({
         request: mockRequest,
         response: mockResponse,
@@ -159,16 +164,16 @@ describe("csrf-csrf token-rotation", () => {
         bodyResponseToken: token,
       })
 
-      assert.isTrue(validateRequestWithSecret1(mockRequest))
-      assert.isFalse(validateRequestWithSecret2(mockRequest))
+      assert.isTrue(await validateRequestWithSecret1(mockRequest))
+      assert.isFalse(await validateRequestWithSecret2(mockRequest))
     })
 
-    it("should generate new token (with secret 1) on request with SECRET2, while current is [SECRET1, SECRET2], if overwrite is true", () => {
-      const { mockRequest } = generateMocksWithMultipleSecrets(SECRET2)
+    it("should generate new token (with secret 1) on request with SECRET2, while current is [SECRET1, SECRET2], if overwrite is true", async () => {
+      const { mockRequest } = await generateMocksWithMultipleSecrets(SECRET2)
 
       const mockResponse = getEmptyResponse()
 
-      const token = generateTokenWithSecret1And2(mockRequest, mockResponse, {
+      const token = await generateTokenWithSecret1And2(mockRequest, mockResponse, {
         overwrite: true,
       })
 
@@ -180,16 +185,16 @@ describe("csrf-csrf token-rotation", () => {
         bodyResponseToken: token,
       })
 
-      assert.isFalse(validateRequestWithSecret2(mockRequest))
-      assert.isTrue(validateRequestWithSecret1(mockRequest))
+      assert.isFalse(await validateRequestWithSecret2(mockRequest))
+      assert.isTrue(await validateRequestWithSecret1(mockRequest))
     })
 
-    it("should generate new token (with secret 2) on request with SECRET2, while current is [SECRET2, SECRET1], if overwrite is true", () => {
-      const { mockRequest } = generateMocksWithMultipleSecrets(SECRET2)
+    it("should generate new token (with secret 2) on request with SECRET2, while current is [SECRET2, SECRET1], if overwrite is true", async () => {
+      const { mockRequest } = await generateMocksWithMultipleSecrets(SECRET2)
 
       const mockResponse = getEmptyResponse()
 
-      const token = generateTokenWithSecret2And1(mockRequest, mockResponse, {
+      const token = await generateTokenWithSecret2And1(mockRequest, mockResponse, {
         overwrite: true,
       })
 
@@ -201,8 +206,8 @@ describe("csrf-csrf token-rotation", () => {
         bodyResponseToken: token,
       })
 
-      assert.isTrue(validateRequestWithSecret2(mockRequest))
-      assert.isFalse(validateRequestWithSecret1(mockRequest))
+      assert.isTrue(await validateRequestWithSecret2(mockRequest))
+      assert.isFalse(await validateRequestWithSecret1(mockRequest))
     })
   })
 })

@@ -44,7 +44,7 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
       },
     } = doubleCsrfOptions
 
-    const generateMocksWithTokenInternal = () =>
+    const generateMocksWithTokenInternal = async () =>
       generateMocksWithToken({
         cookieName,
         generateToken,
@@ -59,8 +59,8 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
     })
 
     describe("generateToken", () => {
-      it("should attach both a token and its hash to the response and return a token", () => {
-        const { mockRequest, decodedCookieValue, setCookie } = generateMocksWithTokenInternal()
+      it("should attach both a token and its hash to the response and return a token", async () => {
+        const { mockRequest, decodedCookieValue, setCookie } = await generateMocksWithTokenInternal()
         const cookieValue = `s:${sign(decodedCookieValue as string, COOKIE_SECRET)}`
 
         const expectedSetCookieValue = serializeCookie(cookieName, cookieValue as string, {
@@ -72,27 +72,27 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
         assert.equal(setCookie, expectedSetCookieValue)
       })
 
-      it("should reuse a csrf token if a csrf cookie is already present, and overwrite is set to false", () => {
-        const { mockRequest, mockResponse, csrfToken, cookieValue: oldCookieValue } = generateMocksWithTokenInternal()
+      it("should reuse a csrf token if a csrf cookie is already present, and overwrite is set to false", async () => {
+        const { mockRequest, mockResponse, csrfToken, cookieValue: oldCookieValue } = await generateMocksWithTokenInternal()
 
         // reset the mock response to have no cookies (in reality this would just be a new instance of Response)
         mockResponse.setHeader("set-cookie", [])
 
         // overwrite is false by default
-        const generatedToken = generateToken(mockRequest, mockResponse)
+        const generatedToken = await generateToken(mockRequest, mockResponse)
         const newCookieValue = getCookieFromResponse(mockResponse)
 
         assert.equal(generatedToken, csrfToken)
         assert.equal(newCookieValue, oldCookieValue)
       })
 
-      it("should generate a new token even if a csrf cookie is already present, if overwrite is set to true", () => {
-        const { mockRequest, mockResponse, csrfToken, cookieValue: oldCookieValue } = generateMocksWithTokenInternal()
+      it("should generate a new token even if a csrf cookie is already present, if overwrite is set to true", async () => {
+        const { mockRequest, mockResponse, csrfToken, cookieValue: oldCookieValue } = await generateMocksWithTokenInternal()
 
         // reset the mock response to have no cookies (in reality this would just be a new instance of Response)
         mockResponse.setHeader("set-cookie", [])
 
-        const generatedToken = generateToken(mockRequest, mockResponse, {
+        const generatedToken = await generateToken(mockRequest, mockResponse, {
           overwrite: true,
         })
         const newCookieValue = getCookieFromResponse(mockResponse)
@@ -101,38 +101,38 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
         assert.notEqual(generatedToken, csrfToken)
       })
 
-      it("should throw if csrf cookie is present and invalid, overwrite is false, and validateOnReuse is enabled", () => {
-        const { mockRequest, mockResponse, decodedCookieValue } = generateMocksWithTokenInternal()
+      it("should throw if csrf cookie is present and invalid, overwrite is false, and validateOnReuse is enabled", async () => {
+        const { mockRequest, mockResponse, decodedCookieValue } = await generateMocksWithTokenInternal()
         // modify the cookie to make the token/hash pair invalid
         const cookieJar = mockRequest.cookies
         cookieJar[cookieName] = new Cookie(`${(decodedCookieValue as string).split("|")[0]}|invalid-hash`)
 
-        expect(() =>
+        await expect(
           generateToken(mockRequest, mockResponse, {
             overwrite: false,
             validateOnReuse: true,
           }),
-        ).to.throw(invalidCsrfTokenError.message)
+        ).rejects.toThrow(invalidCsrfTokenError.message)
 
         // just an invalid value in the cookie
         cookieJar[cookieName] = new Cookie("invalid-value")
 
-        expect(() =>
+        await expect(
           generateToken(mockRequest, mockResponse, {
             overwrite: false,
             validateOnReuse: true,
           }),
-        ).to.throw(invalidCsrfTokenError.message)
+        ).rejects.toThrow(invalidCsrfTokenError.message)
       })
 
-      it("should not throw if csrf cookie is present and invalid when overwrite is false, and validateOnReuse is disabled", () => {
+      it("should not throw if csrf cookie is present and invalid when overwrite is false, and validateOnReuse is disabled", async () => {
         const {
           mockRequest,
           mockResponse,
           decodedCookieValue,
           cookieValue: oldCookieValue,
           csrfToken,
-        } = generateMocksWithTokenInternal()
+        } = await generateMocksWithTokenInternal()
 
         let generatedToken = ""
         let newCookieValue = ""
@@ -142,12 +142,15 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
         const cookieJar = mockRequest.cookies
         cookieJar[cookieName] = new Cookie(`${(decodedCookieValue as string).split("|")[0]}|invalid-hash`)
 
-        assert.doesNotThrow(() => {
-          generatedToken = generateToken(mockRequest, mockResponse, {
+        async function runGenerateToken() {
+          generatedToken = await generateToken(mockRequest, mockResponse, {
             overwrite: false,
-            validateOnReuse: false,
+            validateOnReuse: false
           })
-        })
+        }
+
+        await expect(runGenerateToken()).resolves.not.toThrow()
+
         newCookieValue = getCookieFromResponse(mockResponse)
         assert.notEqual(newCookieValue, oldCookieValue)
         assert.notEqual(generatedToken, csrfToken)
@@ -155,12 +158,7 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
         // just an invalid value in the cookie
         cookieJar[cookieName] = new Cookie("invalid-value")
 
-        assert.doesNotThrow(() => {
-          generatedToken = generateToken(mockRequest, mockResponse, {
-            overwrite: false,
-            validateOnReuse: false,
-          })
-        })
+        await expect(runGenerateToken()).resolves.not.toThrow()
 
         newCookieValue = getCookieFromResponse(mockResponse)
         assert.notEqual(newCookieValue, oldCookieValue)
@@ -169,91 +167,91 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
     })
 
     describe("validateRequest", () => {
-      it("should return false when no token has been generated", () => {
+      it("should return false when no token has been generated", async () => {
         const { mockRequest } = generateMocks()
-        assert.isFalse(validateRequest(mockRequest))
+        assert.isFalse(await validateRequest(mockRequest))
       })
 
-      it("should return false when a token is generated but not received in request", () => {
-        const { mockRequest, decodedCookieValue } = generateMocksWithTokenInternal()
+      it("should return false when a token is generated but not received in request", async () => {
+        const { mockRequest, decodedCookieValue } = await generateMocksWithTokenInternal()
         assert.equal(getCookieFromRequest(cookieName, mockRequest), decodedCookieValue)
 
         // Wipe token
         mockRequest.headers = {}
-        assert.isFalse(validateRequest(mockRequest))
+        assert.isFalse(await validateRequest(mockRequest))
       })
 
-      it("should return false when token does not match", () => {
-        const { mockRequest } = generateMocksWithTokenInternal()
+      it("should return false when token does not match", async () => {
+        const { mockRequest } = await generateMocksWithTokenInternal()
         mockRequest.headers[HEADER_KEY] = TEST_TOKEN
-        assert.isFalse(validateRequest(mockRequest))
+        assert.isFalse(await validateRequest(mockRequest))
       })
 
-      it("should return false when cookie is not present", () => {
-        const { mockRequest } = generateMocksWithTokenInternal()
+      it("should return false when cookie is not present", async () => {
+        const { mockRequest } = await generateMocksWithTokenInternal()
         // Wipe hash
         delete mockRequest.cookies[cookieName]
-        assert.isFalse(validateRequest(mockRequest))
+        assert.isFalse(await validateRequest(mockRequest))
       })
     })
 
-    describe("doubleCsrfProtection", () => {
-      const assertProtectionToThrow = (request: CSRFRequest, response: CSRFResponse) => {
-        expect(() => doubleCsrfProtection(request, response, next)).to.throw(invalidCsrfTokenError.message)
+    describe("doubleCsrfProtection", async () => {
+      const assertProtectionToThrow = async (request: CSRFRequest, response: CSRFResponse) => {
+        await expect(doubleCsrfProtection(request, response, next)).rejects.toThrow(invalidCsrfTokenError.message)
       }
 
-      const assertProtectionToNotThrow = (request: CSRFRequest, response: CSRFResponse) => {
-        expect(() => doubleCsrfProtection(request, response, next)).to.not.throw()
+      const assertProtectionToNotThrow = async (request: CSRFRequest, response: CSRFResponse) => {
+        await expect(doubleCsrfProtection(request, response, next)).resolves.not.toThrow()
       }
 
-      it("should allow requests with an ignored method", () => {
+      it("should allow requests with an ignored method", async () => {
         const { mockRequest, mockResponse } = generateMocks()
         mockRequest.method = "GET"
-        expect(() => doubleCsrfProtection(mockRequest, mockResponse, next)).to.not.throw()
+        await assertProtectionToNotThrow(mockRequest, mockResponse)
 
         // Show an invalid case
-        const { mockResponse: mockResponseWithToken } = generateMocksWithToken({
+        const { mockResponse: mockResponseWithToken } = await generateMocksWithToken({
           cookieName,
           generateToken,
           validateRequest,
         })
         mockRequest.method = "POST"
-        assertProtectionToThrow(mockRequest, mockResponseWithToken)
+        await assertProtectionToThrow(mockRequest, mockResponseWithToken)
         // Works as get
         mockRequest.method = "GET"
-        assertProtectionToNotThrow(mockRequest, mockResponseWithToken)
+        await assertProtectionToNotThrow(mockRequest, mockResponseWithToken)
       })
 
-      it("should allow a valid request", () => {
-        const { mockResponse, mockRequest } = generateMocksWithTokenInternal()
-        assertProtectionToNotThrow(mockRequest, mockResponse)
+      it("should allow a valid request", async () => {
+        const { mockResponse, mockRequest } = await generateMocksWithTokenInternal()
+        await assertProtectionToNotThrow(mockRequest, mockResponse)
       })
 
-      it("should not allow request after secret rotation", () => {
-        const { mockResponse, mockRequest } = generateMocksWithTokenInternal()
-        assertProtectionToNotThrow(mockRequest, mockResponse)
+      it("should not allow request after secret rotation", async () => {
+        const { mockResponse, mockRequest } = await generateMocksWithTokenInternal()
+        await assertProtectionToNotThrow(mockRequest, mockResponse)
         switchSecret()
-        assertProtectionToThrow(mockRequest, mockResponse)
+        await assertProtectionToThrow(mockRequest, mockResponse)
       })
 
-      it("should not allow a protected request with no cookie", () => {
-        const { mockResponse, mockRequest } = generateMocksWithTokenInternal()
+      it("should not allow a protected request with no cookie", async () => {
+        const { mockResponse, mockRequest } = await generateMocksWithTokenInternal()
         delete mockRequest.cookies[cookieName]
-        assertProtectionToThrow(mockRequest, mockResponse)
+        await assertProtectionToThrow(mockRequest, mockResponse)
       })
 
-      it("should not allow a protected request with no token", () => {
-        const { mockResponse, mockRequest } = generateMocksWithTokenInternal()
+      it("should not allow a protected request with no token", async () => {
+        const { mockResponse, mockRequest } = await generateMocksWithTokenInternal()
         delete mockRequest.headers[HEADER_KEY]
         assert.isUndefined(mockRequest.headers[HEADER_KEY])
-        assertProtectionToThrow(mockRequest, mockResponse)
+        await assertProtectionToThrow(mockRequest, mockResponse)
       })
 
-      it("should not allow a protected request with a mismatching token and cookie", () => {
-        const { mockResponse, mockRequest } = generateMocksWithTokenInternal()
-        assertProtectionToNotThrow(mockRequest, mockResponse)
+      it("should not allow a protected request with a mismatching token and cookie", async () => {
+        const { mockResponse, mockRequest } = await generateMocksWithTokenInternal()
+        await assertProtectionToNotThrow(mockRequest, mockResponse)
         mockRequest.headers[HEADER_KEY] = TEST_TOKEN
-        assertProtectionToThrow(mockRequest, mockResponse)
+        await assertProtectionToThrow(mockRequest, mockResponse)
       })
     })
   })

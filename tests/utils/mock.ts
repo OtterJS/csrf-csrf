@@ -60,14 +60,14 @@ export type GenerateMocksWithTokenOptions = {
 
 // Generate the request and response mocks.
 // Set them up as if they have been pre-processed in a valid state.
-export const generateMocksWithToken = ({
+export const generateMocksWithToken = async ({
   cookieName,
   generateToken,
   validateRequest,
 }: GenerateMocksWithTokenOptions) => {
   const { mockRequest, mockResponse } = generateMocks()
 
-  const csrfToken = generateToken(mockRequest, mockResponse)
+  const csrfToken = await generateToken(mockRequest, mockResponse)
   const { setCookie, cookieValue } = getCookieValueFromResponse(mockResponse)
   mockRequest.headers.cookie = `${cookieName}=${cookieValue};`
 
@@ -79,7 +79,7 @@ export const generateMocksWithToken = ({
   mockRequest.headers[HEADER_KEY] = csrfToken
 
   // Once a token has been generated, the request should be setup as valid
-  assert.isTrue(validateRequest(mockRequest))
+  assert.isTrue(await validateRequest(mockRequest))
   return {
     csrfToken,
     cookieValue,
