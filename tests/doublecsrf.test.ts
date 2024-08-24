@@ -68,11 +68,11 @@ describe("csrf-csrf token-rotation", () => {
     })
 
     return {
-      ...await generateMocksWithToken({
+      ...(await generateMocksWithToken({
         cookieName,
         generateToken,
         validateRequest,
-      }),
+      })),
       validateRequest,
       generateToken,
     }

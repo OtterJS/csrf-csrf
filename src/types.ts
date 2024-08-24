@@ -27,25 +27,25 @@ export type ResolvedCSRFCookieOptions = SerializeOptions & Required<ExtraCookieO
 
 export type TokenRetriever<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
 > = (req: Request, res: Response) => string | null | undefined | Promise<string | null | undefined>
 export type CsrfSecretRetriever<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
 > = (req: Request, res: Response) => string | Array<string> | Promise<string | Array<string>>
 export type DoubleCsrfProtection<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
 > = (req: Request, res: Response, next: NextFunction) => Promise<void>
 export type RequestMethod = "GET" | "HEAD" | "PATCH" | "PUT" | "POST" | "DELETE" | "CONNECT" | "OPTIONS" | "TRACE"
 export type CsrfIgnoredMethods = Array<RequestMethod>
 export type CsrfRequestValidator<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
 > = (req: Request, res: Response) => Promise<boolean>
 export type CsrfTokenAndHashPairValidator<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
 > = (
   req: Request,
   res: Response,
@@ -61,7 +61,7 @@ export type CsrfTokenAndHashPairValidator<
 ) => Promise<boolean>
 export type CsrfTokenCreator<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
 > = (req: Request, res: Response, options?: GenerateCsrfTokenOptions) => Promise<string>
 export type CsrfErrorConfig = {
   statusCode: keyof typeof statusMessages
@@ -77,7 +77,7 @@ export type GenerateCsrfTokenConfig = {
 export type GenerateCsrfTokenOptions = Partial<GenerateCsrfTokenConfig>
 export type DoubleCsrfConfig<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
 > = {
   /**
    * A function that returns a secret or an array of secrets.
@@ -158,7 +158,7 @@ export type DoubleCsrfConfig<
 
 export interface DoubleCsrfUtilities<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
 > {
   /**
    * The error that will be thrown if a request is invalid.

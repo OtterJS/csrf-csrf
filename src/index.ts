@@ -8,28 +8,23 @@ import type {
   CsrfTokenAndHashPairValidator,
   CsrfTokenCreator,
   DoubleCsrfConfig,
+  DoubleCsrfProtection,
   DoubleCsrfUtilities,
   GenerateCsrfTokenConfig,
   RequestMethod,
   ResolvedCSRFCookieOptions,
-  DoubleCsrfProtection,
 } from "./types"
 
 function setSecretCookie<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
->(
-  req: Request,
-  res: Response,
-  secret: string,
-  { name, ...options }: ResolvedCSRFCookieOptions,
-): void {
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
+>(req: Request, res: Response, secret: string, { name, ...options }: ResolvedCSRFCookieOptions): void {
   res.cookie(name, secret, options)
 }
 
 export function doubleCsrf<
   Request extends CSRFRequest = CSRFRequest,
-  Response extends CSRFResponse<Request> = CSRFResponse<Request>
+  Response extends CSRFResponse<Request> = CSRFResponse<Request>,
 >({
   getSecret,
   getSessionIdentifier,
@@ -163,11 +158,11 @@ export function doubleCsrf<
 
     return (
       csrfTokenFromCookie === csrfTokenFromRequest &&
-      await validateTokenAndHashPair(req, res, {
+      (await validateTokenAndHashPair(req, res, {
         incomingToken: csrfTokenFromRequest,
         incomingHash: csrfTokenHash,
         possibleSecrets,
-      })
+      }))
     )
   }
 
@@ -176,7 +171,7 @@ export function doubleCsrf<
       next()
       return
     }
-    if (!await validateRequest(req, res)) {
+    if (!(await validateRequest(req, res))) {
       throw invalidCsrfTokenError
     }
     next()

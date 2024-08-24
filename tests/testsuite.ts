@@ -73,7 +73,12 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
       })
 
       it("should reuse a csrf token if a csrf cookie is already present, and overwrite is set to false", async () => {
-        const { mockRequest, mockResponse, csrfToken, cookieValue: oldCookieValue } = await generateMocksWithTokenInternal()
+        const {
+          mockRequest,
+          mockResponse,
+          csrfToken,
+          cookieValue: oldCookieValue,
+        } = await generateMocksWithTokenInternal()
 
         // reset the mock response to have no cookies (in reality this would just be a new instance of Response)
         mockResponse.setHeader("set-cookie", [])
@@ -87,7 +92,12 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
       })
 
       it("should generate a new token even if a csrf cookie is already present, if overwrite is set to true", async () => {
-        const { mockRequest, mockResponse, csrfToken, cookieValue: oldCookieValue } = await generateMocksWithTokenInternal()
+        const {
+          mockRequest,
+          mockResponse,
+          csrfToken,
+          cookieValue: oldCookieValue,
+        } = await generateMocksWithTokenInternal()
 
         // reset the mock response to have no cookies (in reality this would just be a new instance of Response)
         mockResponse.setHeader("set-cookie", [])
@@ -145,7 +155,7 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
         async function runGenerateToken() {
           generatedToken = await generateToken(mockRequest, mockResponse, {
             overwrite: false,
-            validateOnReuse: false
+            validateOnReuse: false,
           })
         }
 
