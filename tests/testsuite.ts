@@ -168,30 +168,30 @@ export const createTestSuite: CreateTestSuite = (name, doubleCsrfOptions) => {
 
     describe("validateRequest", () => {
       it("should return false when no token has been generated", async () => {
-        const { mockRequest } = generateMocks()
-        assert.isFalse(await validateRequest(mockRequest))
+        const { mockRequest, mockResponse } = generateMocks()
+        assert.isFalse(await validateRequest(mockRequest, mockResponse))
       })
 
       it("should return false when a token is generated but not received in request", async () => {
-        const { mockRequest, decodedCookieValue } = await generateMocksWithTokenInternal()
+        const { mockRequest, mockResponse, decodedCookieValue } = await generateMocksWithTokenInternal()
         assert.equal(getCookieFromRequest(cookieName, mockRequest), decodedCookieValue)
 
         // Wipe token
         mockRequest.headers = {}
-        assert.isFalse(await validateRequest(mockRequest))
+        assert.isFalse(await validateRequest(mockRequest, mockResponse))
       })
 
       it("should return false when token does not match", async () => {
-        const { mockRequest } = await generateMocksWithTokenInternal()
+        const { mockRequest, mockResponse } = await generateMocksWithTokenInternal()
         mockRequest.headers[HEADER_KEY] = TEST_TOKEN
-        assert.isFalse(await validateRequest(mockRequest))
+        assert.isFalse(await validateRequest(mockRequest, mockResponse))
       })
 
       it("should return false when cookie is not present", async () => {
-        const { mockRequest } = await generateMocksWithTokenInternal()
+        const { mockRequest, mockResponse } = await generateMocksWithTokenInternal()
         // Wipe hash
         delete mockRequest.cookies[cookieName]
-        assert.isFalse(await validateRequest(mockRequest))
+        assert.isFalse(await validateRequest(mockRequest, mockResponse))
       })
     })
 

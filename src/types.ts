@@ -25,14 +25,15 @@ type ExtraCookieOptions = {
 export type CSRFCookieOptions = SerializeOptions & ExtraCookieOptions
 export type ResolvedCSRFCookieOptions = SerializeOptions & Required<ExtraCookieOptions>
 
-export type TokenRetriever = (req: CSRFRequest) => string | null | undefined | Promise<string | null | undefined>
-export type CsrfSecretRetriever = (req?: CSRFRequest) => string | Array<string> | Promise<string | Array<string>>
+export type TokenRetriever = (req: CSRFRequest, res: CSRFResponse) => string | null | undefined | Promise<string | null | undefined>
+export type CsrfSecretRetriever = (req: CSRFRequest, res: CSRFResponse) => string | Array<string> | Promise<string | Array<string>>
 export type doubleCsrfProtection = (req: CSRFRequest, res: CSRFResponse, next: NextFunction) => Promise<void>
 export type RequestMethod = "GET" | "HEAD" | "PATCH" | "PUT" | "POST" | "DELETE" | "CONNECT" | "OPTIONS" | "TRACE"
 export type CsrfIgnoredMethods = Array<RequestMethod>
-export type CsrfRequestValidator = (req: CSRFRequest) => Promise<boolean>
+export type CsrfRequestValidator = (req: CSRFRequest, res: CSRFResponse) => Promise<boolean>
 export type CsrfTokenAndHashPairValidator = (
   req: CSRFRequest,
+  res: CSRFResponse,
   {
     incomingHash,
     incomingToken,
@@ -83,7 +84,7 @@ export type DoubleCsrfConfig = {
    * @returns the session identifier for the request
    * @default (req) => req.session.id
    */
-  getSessionIdentifier: (req: CSRFRequest) => string | Promise<string>
+  getSessionIdentifier: (req: CSRFRequest, res: CSRFResponse) => string | Promise<string>
 
   /**
    * The options for HTTPOnly cookie that will be set on the response.

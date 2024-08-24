@@ -59,9 +59,10 @@ export function doubleCsrf({
 
   const generateTokenAndHash = async (
     req: CSRFRequest,
+    res: CSRFResponse,
     { overwrite, validateOnReuse }: Omit<GenerateCsrfTokenConfig, "cookieOptions">,
   ) => {
-    const getSecretResult = await getSecret(req)
+    const getSecretResult = await getSecret(req, res)
     const possibleSecrets = Array.isArray(getSecretResult) ? getSecretResult : [getSecretResult]
 
     const csrfCookie = getCsrfCookieFromRequest(req)
@@ -73,7 +74,7 @@ export function doubleCsrf({
     if (typeof csrfCookie === "object" && !overwrite) {
       const [csrfToken, csrfTokenHash] = csrfCookie.value.split(delimiter)
       if (
-        await validateTokenAndHashPair(req, {
+        await validateTokenAndHashPair(req, res, {
           incomingToken: csrfToken,
           incomingHash: csrfTokenHash,
           possibleSecrets,
@@ -94,7 +95,7 @@ export function doubleCsrf({
     // the 'newest' or preferred secret is the first one in the array
     const secret = possibleSecrets[0]
     const csrfTokenHash = createHmac(hmacAlgorithm, secret)
-      .update(`${await getSessionIdentifier(req)}${csrfToken}`)
+      .update(`${await getSessionIdentifier(req, res)}${csrfToken}`)
       .digest("hex")
 
     return { csrfToken, csrfTokenHash }
@@ -109,7 +110,7 @@ export function doubleCsrf({
     res: CSRFResponse,
     { cookieOptions = defaultCookieOptions, overwrite = false, validateOnReuse = true } = {},
   ) => {
-    const { csrfToken, csrfTokenHash } = await generateTokenAndHash(req, {
+    const { csrfToken, csrfTokenHash } = await generateTokenAndHash(req, res, {
       overwrite,
       validateOnReuse,
     })
@@ -125,13 +126,14 @@ export function doubleCsrf({
   // given a secret array, iterates over it and checks whether one of the secrets makes the token and hash pair valid
   const validateTokenAndHashPair: CsrfTokenAndHashPairValidator = async (
     req,
+    res,
     { incomingHash, incomingToken, possibleSecrets },
   ) => {
     if (typeof incomingToken !== "string" || typeof incomingHash !== "string") return false
 
     for (const secret of possibleSecrets) {
       const expectedHash = createHmac(hmacAlgorithm, secret)
-        .update(`${await getSessionIdentifier(req)}${incomingToken}`)
+        .update(`${await getSessionIdentifier(req, res)}${incomingToken}`)
         .digest("hex")
       if (incomingHash === expectedHash) return true
     }
@@ -139,7 +141,7 @@ export function doubleCsrf({
     return false
   }
 
-  const validateRequest: CsrfRequestValidator = async (req) => {
+  const validateRequest: CsrfRequestValidator = async (req, res) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const csrfCookie = getCsrfCookieFromRequest(req)
     if (typeof csrfCookie !== "object") return false
@@ -148,14 +150,14 @@ export function doubleCsrf({
     const [csrfTokenFromCookie, csrfTokenHash] = csrfCookie.value.split(delimiter)
 
     // csrf token from the request
-    const csrfTokenFromRequest = await getTokenFromRequest(req)
+    const csrfTokenFromRequest = await getTokenFromRequest(req, res)
 
-    const getSecretResult = await getSecret(req)
+    const getSecretResult = await getSecret(req, res)
     const possibleSecrets = Array.isArray(getSecretResult) ? getSecretResult : [getSecretResult]
 
     return (
       csrfTokenFromCookie === csrfTokenFromRequest &&
-      await validateTokenAndHashPair(req, {
+      await validateTokenAndHashPair(req, res, {
         incomingToken: csrfTokenFromRequest,
         incomingHash: csrfTokenHash,
         possibleSecrets,
@@ -168,7 +170,7 @@ export function doubleCsrf({
       next()
       return
     }
-    if (!await validateRequest(req)) {
+    if (!await validateRequest(req, res)) {
       throw invalidCsrfTokenError
     }
     next()
