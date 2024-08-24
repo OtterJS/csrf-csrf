@@ -139,7 +139,7 @@ const doubleCsrfUtilities = doubleCsrf({
 ### `getSecret`
 
 ```ts
-type GetSecretType = (request?: Request) => string | string[]
+type GetSecretType = (request: Request, response: Response) => string | string[] | Promise<string | string[]>
 ```
 
 <p><b>Required</b></p>
@@ -154,7 +154,7 @@ the previous secret (which might still be used by some users) right away.
 ### `getSessionIdentifier`
 
 ```ts
-type GetSessionIdentifierType = (request: Request) => string;
+type GetSessionIdentifierType = (request: Request, response: Response) => string | Promise<string>;
 ```
 
 <p><b>Required</b></p>
@@ -255,7 +255,7 @@ type DelimiterType = string;
 ### `getTokenFromRequest`
 
 ```ts
-(req: Request) => string | null | undefined;
+(req: Request, res: Response) => string | null | undefined;
 ```
 
 <p>
@@ -408,7 +408,7 @@ This error is customizable via [`errorConfig`](#configuration-error-config)</a>.
 ### `validateToken`
 
 ```ts
-type ValidateToken = (req: Request) => boolean;
+type ValidateToken = (req: Request, res: Response) => boolean;
 ```
 
 This function is used by the doubleCsrfProtection middleware to determine whether an incoming request has a valid
