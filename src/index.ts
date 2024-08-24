@@ -57,11 +57,11 @@ export function doubleCsrf({
     code: code,
   })
 
-  const generateTokenAndHash = (
+  const generateTokenAndHash = async (
     req: CSRFRequest,
     { overwrite, validateOnReuse }: Omit<GenerateCsrfTokenConfig, "cookieOptions">,
   ) => {
-    const getSecretResult = getSecret(req)
+    const getSecretResult = await getSecret(req)
     const possibleSecrets = Array.isArray(getSecretResult) ? getSecretResult : [getSecretResult]
 
     const csrfCookie = getCsrfCookieFromRequest(req)
@@ -73,7 +73,7 @@ export function doubleCsrf({
     if (typeof csrfCookie === "object" && !overwrite) {
       const [csrfToken, csrfTokenHash] = csrfCookie.value.split(delimiter)
       if (
-        validateTokenAndHashPair(req, {
+        await validateTokenAndHashPair(req, {
           incomingToken: csrfToken,
           incomingHash: csrfTokenHash,
           possibleSecrets,
@@ -94,7 +94,7 @@ export function doubleCsrf({
     // the 'newest' or preferred secret is the first one in the array
     const secret = possibleSecrets[0]
     const csrfTokenHash = createHmac(hmacAlgorithm, secret)
-      .update(`${getSessionIdentifier(req)}${csrfToken}`)
+      .update(`${await getSessionIdentifier(req)}${csrfToken}`)
       .digest("hex")
 
     return { csrfToken, csrfTokenHash }
@@ -104,12 +104,12 @@ export function doubleCsrf({
   // This should be used in routes or middleware to provide users with a token.
   // The value returned from this should ONLY be sent to the client via a response payload.
   // Do NOT send the csrfToken as a cookie, embed it in your HTML response, or as JSON.
-  const generateToken: CsrfTokenCreator = (
+  const generateToken: CsrfTokenCreator = async (
     req: CSRFRequest,
     res: CSRFResponse,
     { cookieOptions = defaultCookieOptions, overwrite = false, validateOnReuse = true } = {},
   ) => {
-    const { csrfToken, csrfTokenHash } = generateTokenAndHash(req, {
+    const { csrfToken, csrfTokenHash } = await generateTokenAndHash(req, {
       overwrite,
       validateOnReuse,
     })
@@ -123,7 +123,7 @@ export function doubleCsrf({
   const getCsrfCookieFromRequest = (req: CSRFRequest) => req.cookies?.[defaultCookieOptions.name]
 
   // given a secret array, iterates over it and checks whether one of the secrets makes the token and hash pair valid
-  const validateTokenAndHashPair: CsrfTokenAndHashPairValidator = (
+  const validateTokenAndHashPair: CsrfTokenAndHashPairValidator = async (
     req,
     { incomingHash, incomingToken, possibleSecrets },
   ) => {
@@ -131,7 +131,7 @@ export function doubleCsrf({
 
     for (const secret of possibleSecrets) {
       const expectedHash = createHmac(hmacAlgorithm, secret)
-        .update(`${getSessionIdentifier(req)}${incomingToken}`)
+        .update(`${await getSessionIdentifier(req)}${incomingToken}`)
         .digest("hex")
       if (incomingHash === expectedHash) return true
     }
@@ -139,7 +139,7 @@ export function doubleCsrf({
     return false
   }
 
-  const validateRequest: CsrfRequestValidator = (req) => {
+  const validateRequest: CsrfRequestValidator = async (req) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const csrfCookie = getCsrfCookieFromRequest(req)
     if (typeof csrfCookie !== "object") return false
@@ -148,14 +148,14 @@ export function doubleCsrf({
     const [csrfTokenFromCookie, csrfTokenHash] = csrfCookie.value.split(delimiter)
 
     // csrf token from the request
-    const csrfTokenFromRequest = getTokenFromRequest(req) as string
+    const csrfTokenFromRequest = await getTokenFromRequest(req)
 
-    const getSecretResult = getSecret(req)
+    const getSecretResult = await getSecret(req)
     const possibleSecrets = Array.isArray(getSecretResult) ? getSecretResult : [getSecretResult]
 
     return (
       csrfTokenFromCookie === csrfTokenFromRequest &&
-      validateTokenAndHashPair(req, {
+      await validateTokenAndHashPair(req, {
         incomingToken: csrfTokenFromRequest,
         incomingHash: csrfTokenHash,
         possibleSecrets,
@@ -163,14 +163,15 @@ export function doubleCsrf({
     )
   }
 
-  const doubleCsrfProtection: doubleCsrfProtection = (req, res, next) => {
+  const doubleCsrfProtection: doubleCsrfProtection = async (req, res, next) => {
     if (ignoredMethodsSet.has(req.method as RequestMethod)) {
       next()
-    } else if (validateRequest(req)) {
-      next()
-    } else {
+      return
+    }
+    if (!await validateRequest(req)) {
       throw invalidCsrfTokenError
     }
+    next()
   }
 
   return {

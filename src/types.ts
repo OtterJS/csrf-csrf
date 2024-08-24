@@ -25,12 +25,12 @@ type ExtraCookieOptions = {
 export type CSRFCookieOptions = SerializeOptions & ExtraCookieOptions
 export type ResolvedCSRFCookieOptions = SerializeOptions & Required<ExtraCookieOptions>
 
-export type TokenRetriever = (req: CSRFRequest) => string | null | undefined
-export type CsrfSecretRetriever = (req?: CSRFRequest) => string | Array<string>
-export type doubleCsrfProtection = (req: CSRFRequest, res: CSRFResponse, next: NextFunction) => void
+export type TokenRetriever = (req: CSRFRequest) => string | null | undefined | Promise<string | null | undefined>
+export type CsrfSecretRetriever = (req?: CSRFRequest) => string | Array<string> | Promise<string | Array<string>>
+export type doubleCsrfProtection = (req: CSRFRequest, res: CSRFResponse, next: NextFunction) => Promise<void>
 export type RequestMethod = "GET" | "HEAD" | "PATCH" | "PUT" | "POST" | "DELETE" | "CONNECT" | "OPTIONS" | "TRACE"
 export type CsrfIgnoredMethods = Array<RequestMethod>
-export type CsrfRequestValidator = (req: CSRFRequest) => boolean
+export type CsrfRequestValidator = (req: CSRFRequest) => Promise<boolean>
 export type CsrfTokenAndHashPairValidator = (
   req: CSRFRequest,
   {
@@ -42,9 +42,8 @@ export type CsrfTokenAndHashPairValidator = (
     incomingToken: unknown
     possibleSecrets: Array<string>
   },
-) => boolean
-export type CsrfCookieSetter = (res: CSRFResponse, name: string, value: string, options: CSRFCookieOptions) => void
-export type CsrfTokenCreator = (req: CSRFRequest, res: CSRFResponse, options?: GenerateCsrfTokenOptions) => string
+) => Promise<boolean>
+export type CsrfTokenCreator = (req: CSRFRequest, res: CSRFResponse, options?: GenerateCsrfTokenOptions) => Promise<string>
 export type CsrfErrorConfig = {
   statusCode: keyof typeof statusMessages
   message: string
@@ -84,7 +83,7 @@ export type DoubleCsrfConfig = {
    * @returns the session identifier for the request
    * @default (req) => req.session.id
    */
-  getSessionIdentifier: (req: CSRFRequest) => string
+  getSessionIdentifier: (req: CSRFRequest) => string | Promise<string>
 
   /**
    * The options for HTTPOnly cookie that will be set on the response.
