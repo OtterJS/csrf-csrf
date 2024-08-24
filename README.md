@@ -1,6 +1,6 @@
 # @otterjs/csrf-csrf
 
-**Double-submit cookie pattern CSRF protection middleware for modern Node.js.**
+**Double-submit cookie pattern CSRF protection middleware for Otterhttp.**
 
 > :pushpin: This project is a fork of [Psifi-Solutions/csrf-csrf](https://github.com/Psifi-Solutions/csrf-csrf).
 
@@ -40,16 +40,13 @@ for the [Synchroniser Token Pattern][owasp-csrf-st].
 This section will guide you through using the default setup, which does sufficiently implement the
 Double Submit Cookie Pattern. If you'd like to customise the configuration, see [configuration](#configuration).
 
-You will need to be using [tinyhttp/cookie-parser](https://github.com/tinyhttp/cookie-parser) whose middleware
-should be registered before `csrf-csrf`.
-In case you want to use signed CSRF cookies, you **will need to** provide `cookie-parser` with a unique secret
-for cookie signing.
+In case you want to use signed CSRF cookies, you **will need to** configure otterhttp for that.
 This utility will (1) set a cookie containing both the csrf token and a hash of the csrf token, and
 (2) provide the plain csrf token.
 You are then responsible for including the CSRF token within your response however you choose.
 
 ```
-npm install @tinyhttp/cookie-parser @otterjs/csrf-csrf
+npm install @otterhttp/csrf-csrf
 ```
 
 ```js
@@ -88,10 +85,8 @@ If you use an HTTP verb other than `GET`, make sure you register this route befo
 `doubleCsrfProtection` middleware so you don't block yourself from getting a token.
 
 ```js
-// Make sure your session middleware is registered before these
-express.use(session);
-express.get("/csrf-token", myRoute);
-express.use(doubleCsrfProtection);
+app.get("/csrf-token", myRoute);
+app.use(doubleCsrfProtection);
 // Any non GET routes registered after this will be considered "protected"
 ```
 
@@ -179,7 +174,6 @@ type CookieOptions = SerializeOptions & {
   sameSite?: string;
   path?: string;
   secure?: boolean;
-  signed?: boolean;
 }
 ```
 
@@ -194,7 +188,6 @@ const defaultCookieOptions = {
   sameSite: "lax",
   path: "/",
   secure: true,
-  signed: false,
 }
 ```
 
