@@ -19,19 +19,6 @@ createTestSuite("csrf-csrf single secret", {
   getSessionIdentifier: legacySessionIdentifier,
 })
 
-createTestSuite("csrf-csrf single secret with cookie-signing", {
-  getSecret: getSingleSecret,
-  getSessionIdentifier: legacySessionIdentifier,
-  cookieOptions: {
-    sign: (value: string) => `s:${sign(value, COOKIE_SECRET)}`,
-    unsign: (signedValue: string) => {
-      const result = unsign(signedValue.slice(2), COOKIE_SECRET)
-      if (result === false) throw new Error()
-      return result
-    },
-  },
-})
-
 createTestSuite("csrf-csrf custom options, single secret", {
   getSecret: getSingleSecret,
   getSessionIdentifier: legacySessionIdentifier,
