@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@otterhttp/cookie':
-        specifier: ^3.0.0
-        version: 3.0.0
       '@otterhttp/errors':
         specifier: ^0.2.0
         version: 0.2.0
@@ -18,6 +15,9 @@ importers:
       '@biomejs/biome':
         specifier: ^1.8.3
         version: 1.8.3
+      '@otterhttp/cookie':
+        specifier: ^3.0.1
+        version: 3.0.1
       '@otterhttp/cookie-signature':
         specifier: ^3.0.0
         version: 3.0.0
@@ -393,6 +393,10 @@ packages:
 
   '@otterhttp/cookie@3.0.0':
     resolution: {integrity: sha512-D1/bN2s985/5wSZ0Bn3F3I7HZW3vNCIg/Pthrk7dIiwg3Y1flPrlwQOK84aNk4C2w19QGgqccuDHSIPJtoNsHg==}
+    engines: {node: '>=20.16.0'}
+
+  '@otterhttp/cookie@3.0.1':
+    resolution: {integrity: sha512-yCEQQR6pSvBlry4k4+EsXDvHfTvLaB5ELq4tz1eStAThzMjUtgz1RG4FUvu2fQuCtaGoj/BE0xsRcZOxgx2YNw==}
     engines: {node: '>=20.16.0'}
 
   '@otterhttp/errors@0.2.0':
@@ -2245,6 +2249,8 @@ snapshots:
   '@otterhttp/cookie-signature@3.0.0': {}
 
   '@otterhttp/cookie@3.0.0': {}
+
+  '@otterhttp/cookie@3.0.1': {}
 
   '@otterhttp/errors@0.2.0':
     dependencies:

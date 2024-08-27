@@ -48,7 +48,6 @@ export function doubleCsrf<
       path: "/",
       secure: true,
       httpOnly: true,
-      signed: false,
     },
     cookieOptions,
   )

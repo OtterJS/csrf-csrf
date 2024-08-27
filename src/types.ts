@@ -6,12 +6,20 @@ type NextFunction = () => unknown
 
 type Cookie = { value: string }
 
+type SetCookieOptions = SerializeOptions & {
+  /**
+   * `otterhttp` cookie `sign` function, will be passed to `res.cookie`.
+   * @default undefined
+   */
+  sign?: ((value: string) => string) | undefined
+}
+
 export type CSRFRequest = IncomingMessage & {
   cookies: Record<string, Cookie>
 }
 
 export type CSRFResponse<Request extends CSRFRequest = CSRFRequest> = ServerResponse<Request> & {
-  cookie: (name: string, value: string, options?: SerializeOptions) => unknown
+  cookie: (name: string, value: string, options?: SetCookieOptions) => unknown
 }
 
 type ExtraCookieOptions = {
@@ -19,11 +27,23 @@ type ExtraCookieOptions = {
    * The name of the HTTPOnly cookie that will be set on the response.
    * @default "__Host-otter.x-csrf-token"
    */
-  name?: string
+  name?: string | undefined
+
+  /**
+   * `otterhttp` cookie 'unsign' function, will be used to unsign csrf-csrf cookies.
+   *
+   * You must ensure that signed csrf-csrf cookies are not matched by your `otterhttp` `App`'s configured
+   * `signedCookieMatcher`. Otherwise, `otterhttp` will attempt to unsign session cookies using the `App`'s configured
+   * `cookieUnsigner` instead, and unsigning with this function will not be attempted.
+   * @default undefined
+   */
+  unsign?: ((signedValue: string) => string) | undefined
 }
 
-export type CSRFCookieOptions = SerializeOptions & ExtraCookieOptions
-export type ResolvedCSRFCookieOptions = SerializeOptions & Required<ExtraCookieOptions>
+export type CSRFCookieOptions = SetCookieOptions & ExtraCookieOptions
+export type ResolvedCSRFCookieOptions = SetCookieOptions
+  & Required<Pick<ExtraCookieOptions, "name">>
+  & Exclude<ExtraCookieOptions, "name">
 
 export type TokenRetriever<
   Request extends CSRFRequest = CSRFRequest,

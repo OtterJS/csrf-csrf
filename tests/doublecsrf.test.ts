@@ -1,7 +1,6 @@
-import { doubleCsrf } from "@/index"
-import type { DoubleCsrfConfig } from "@/types"
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { assert, describe, it } from "vitest"
+import { sign, unsign } from "@otterhttp/cookie-signature"
+
 import { createTestSuite } from "./testsuite"
 import { COOKIE_SECRET, HEADER_KEY } from "./utils/constants"
 import {
@@ -12,9 +11,25 @@ import {
 } from "./utils/helpers.js"
 import { generateMocks, generateMocksWithToken } from "./utils/mock.js"
 
+import { doubleCsrf } from "@/index"
+import type { DoubleCsrfConfig } from "@/types"
+
 createTestSuite("csrf-csrf single secret", {
   getSecret: getSingleSecret,
   getSessionIdentifier: legacySessionIdentifier,
+})
+
+createTestSuite("csrf-csrf single secret with cookie-signing", {
+  getSecret: getSingleSecret,
+  getSessionIdentifier: legacySessionIdentifier,
+  cookieOptions: {
+    sign: (value: string) => `s:${sign(value, COOKIE_SECRET)}`,
+    unsign: (signedValue: string) => {
+      const result = unsign(signedValue.slice(2), COOKIE_SECRET)
+      if (result === false) throw new Error()
+      return result
+    }
+  }
 })
 
 createTestSuite("csrf-csrf custom options, single secret", {
