@@ -22,8 +22,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       '@otterhttp/request':
-        specifier: ^3.1.1
-        version: 3.1.1
+        specifier: ^3.4.1
+        version: 3.4.1
       '@types/node':
         specifier: ^20.14.10
         version: 20.14.10
@@ -391,10 +391,6 @@ packages:
     resolution: {integrity: sha512-AcWQokILP5/oz4Nw5cj5d4UYCrhTaMupQ30eVcDJrNt06+MCJQ+NGgob3xsJJMXUxuUkOVu8eVgchatOqKvGQw==}
     engines: {node: '>=20.16.0'}
 
-  '@otterhttp/cookie@3.0.0':
-    resolution: {integrity: sha512-D1/bN2s985/5wSZ0Bn3F3I7HZW3vNCIg/Pthrk7dIiwg3Y1flPrlwQOK84aNk4C2w19QGgqccuDHSIPJtoNsHg==}
-    engines: {node: '>=20.16.0'}
-
   '@otterhttp/cookie@3.0.1':
     resolution: {integrity: sha512-yCEQQR6pSvBlry4k4+EsXDvHfTvLaB5ELq4tz1eStAThzMjUtgz1RG4FUvu2fQuCtaGoj/BE0xsRcZOxgx2YNw==}
     engines: {node: '>=20.16.0'}
@@ -415,8 +411,8 @@ packages:
     resolution: {integrity: sha512-FVD/OTmlyQbD9MfPjgTcdLpglEmJknIXSc8KBGtdgmnfx+nAahy9tZt7JFWQKR/K9nzDreBO6FQD5Bg9YhhmuQ==}
     engines: {node: '>=20.16.0'}
 
-  '@otterhttp/request@3.1.1':
-    resolution: {integrity: sha512-Y7iaFjiUokisjZ2QU7sYMhACLlpqoSaP1FUTL5sswGjBfc5zlzhIyKFUo4Z0THGp8iLOZberdz72GsZrZozesA==}
+  '@otterhttp/request@3.4.1':
+    resolution: {integrity: sha512-NrWAR1c3odMvUvM6si8pMHGn90ufRA6S+n6IEOijzE8n3Z2KDE6IXlcROX2V3y/hBgDguPh07rZTp/FoJmOM+w==}
     engines: {node: '>=20.16.0'}
 
   '@otterhttp/router@3.0.0':
@@ -2248,8 +2244,6 @@ snapshots:
 
   '@otterhttp/cookie-signature@3.0.0': {}
 
-  '@otterhttp/cookie@3.0.0': {}
-
   '@otterhttp/cookie@3.0.1': {}
 
   '@otterhttp/errors@0.2.0':
@@ -2265,11 +2259,11 @@ snapshots:
       '@otterhttp/forwarded': 3.0.0
       ipaddr.js: 2.2.0
 
-  '@otterhttp/request@3.1.1':
+  '@otterhttp/request@3.4.1':
     dependencies:
       '@otterhttp/accepts': 3.0.0
       '@otterhttp/content-type': 0.5.0
-      '@otterhttp/cookie': 3.0.0
+      '@otterhttp/cookie': 3.0.1
       '@otterhttp/proxy-address': 3.0.0
       '@otterhttp/router': 3.0.0
       '@otterhttp/type-is': 4.0.1
