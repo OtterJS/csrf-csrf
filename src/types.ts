@@ -4,7 +4,11 @@ import type { HttpError, statusMessages } from "@otterhttp/errors"
 
 type NextFunction = () => unknown
 
-type Cookie = { value: string }
+type Cookie = {
+  value: string
+  signed: boolean
+  unsign(unsigner: (signedValue: string) => string): void
+}
 
 type SetCookieOptions = SerializeOptions & {
   /**

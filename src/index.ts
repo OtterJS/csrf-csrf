@@ -71,8 +71,8 @@ export function doubleCsrf<
     // If overwrite is false and there is an existing token then validate the token and hash pair
     // the existing cookie and reuse it if it is valid. If it isn't valid, then either throw or
     // generate a new token based on validateOnReuse.
-    if (typeof csrfCookie === "object" && !overwrite) {
-      const [csrfToken, csrfTokenHash] = csrfCookie.value.split(delimiter)
+    if (typeof csrfCookie === "string" && !overwrite) {
+      const [csrfToken, csrfTokenHash] = csrfCookie.split(delimiter)
       if (
         await validateTokenAndHashPair(req, res, {
           incomingToken: csrfToken,
@@ -121,7 +121,24 @@ export function doubleCsrf<
     return csrfToken
   }
 
-  const getCsrfCookieFromRequest = (req: Request) => req.cookies?.[defaultCookieOptions.name]
+  const getCsrfCookieFromRequest = (req: Request): string | undefined => {
+    const cookie = req.cookies?.[defaultCookieOptions.name]
+
+    function cookieValueSafe() {
+      try {
+        return cookie.value
+      } catch {
+        return undefined
+      }
+    }
+
+    if (cookie == null) return cookie
+    if (defaultCookieOptions.unsign == null) return cookieValueSafe()
+    // if the cookie has already been unsigned, do nothing
+    if (cookie.signed) return cookieValueSafe()
+    cookie.unsign(defaultCookieOptions.unsign)
+    return cookieValueSafe()
+  }
 
   // given a secret array, iterates over it and checks whether one of the secrets makes the token and hash pair valid
   const validateTokenAndHashPair: CsrfTokenAndHashPairValidator<Request, Response> = async (
@@ -144,10 +161,10 @@ export function doubleCsrf<
   const validateRequest: CsrfRequestValidator<Request, Response> = async (req, res) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const csrfCookie = getCsrfCookieFromRequest(req)
-    if (typeof csrfCookie !== "object") return false
+    if (typeof csrfCookie !== "string") return false
 
     // cookie has the form {token}{delimiter}{hash}
-    const [csrfTokenFromCookie, csrfTokenHash] = csrfCookie.value.split(delimiter)
+    const [csrfTokenFromCookie, csrfTokenHash] = csrfCookie.split(delimiter)
 
     // csrf token from the request
     const csrfTokenFromRequest = await getTokenFromRequest(req, res)
