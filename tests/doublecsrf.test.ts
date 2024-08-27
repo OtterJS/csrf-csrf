@@ -1,5 +1,5 @@
-import { assert, describe, it } from "vitest"
 import { sign, unsign } from "@otterhttp/cookie-signature"
+import { assert, describe, it } from "vitest"
 
 import { createTestSuite } from "./testsuite"
 import { COOKIE_SECRET, HEADER_KEY } from "./utils/constants"
@@ -28,8 +28,8 @@ createTestSuite("csrf-csrf single secret with cookie-signing", {
       const result = unsign(signedValue.slice(2), COOKIE_SECRET)
       if (result === false) throw new Error()
       return result
-    }
-  }
+    },
+  },
 })
 
 createTestSuite("csrf-csrf custom options, single secret", {

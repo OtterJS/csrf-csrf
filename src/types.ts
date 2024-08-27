@@ -41,9 +41,9 @@ type ExtraCookieOptions = {
 }
 
 export type CSRFCookieOptions = SetCookieOptions & ExtraCookieOptions
-export type ResolvedCSRFCookieOptions = SetCookieOptions
-  & Required<Pick<ExtraCookieOptions, "name">>
-  & Exclude<ExtraCookieOptions, "name">
+export type ResolvedCSRFCookieOptions = SetCookieOptions &
+  Required<Pick<ExtraCookieOptions, "name">> &
+  Exclude<ExtraCookieOptions, "name">
 
 export type TokenRetriever<
   Request extends CSRFRequest = CSRFRequest,
