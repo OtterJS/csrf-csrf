@@ -12,6 +12,7 @@
     "declaration": false,
     "removeComments": true,
     "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"]
     }
